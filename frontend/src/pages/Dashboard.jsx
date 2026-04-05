@@ -62,6 +62,9 @@ export default function Dashboard() {
             <span className="profile-name">{user.name || user.login}</span>
             <span className="profile-email">{user.email}</span>
           </div>
+          {user.role === 'ADMIN' && (
+            <button className="admin-btn" onClick={() => navigate('/admin')}>Admin Panel</button>
+          )}
           <button className="logout-btn" onClick={handleLogout}>Logout</button>
         </div>
       </header>
