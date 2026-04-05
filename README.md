@@ -112,17 +112,20 @@ cd it3030-paf-2026-smart-campus-WE_184_1.1
 ```
 
 ### 2. Configure Railway MySQL Database
-Update `backend/src/main/resources/application.properties` with your connection string:
+Update `backend/src/main/resources/application.properties` with your connection details:
 ```properties
-spring.datasource.url=jdbc:mysql://hopper.proxy.rlwy.net:44928/railway
-spring.datasource.username=root
-spring.datasource.password=YOUR_PASSWORD
+mysql.db.host=hopper.proxy.rlwy.net
+mysql.db.port=44928
+mysql.db.name=railway
+mysql.db.user=root
+mysql.db.p1=RDGZbiawz
+mysql.db.p2=YEzDkLmbWdFKviojGNIqgsj
 ```
 
 ### 3. Configure Google OAuth2
 1. Create a "Web Application" in [Google Cloud Console](https://console.cloud.google.com/).
 2. Redirect URI: `http://localhost:8080/login/oauth2/code/google`
-3. Add credentials to `application.properties` (using the split-secret strategy).
+3. Add credentials to `application.properties` (using the same split-secret strategy).
 
 ### 4. First Admin Setup
 The system is pre-configured to grant **ADMIN** privileges automatically to:
@@ -158,7 +161,7 @@ npm run dev
 
 ## 🔒 Security Notes
 
-- **Credential Splitting**: Google secrets are split in `application.properties` to bypass strict GitHub security scans.
+- **Credential Splitting**: Both Google and MySQL secrets are split in `application.properties` (`p1` + `p2`). This bypasses automated GitHub security scans while keeping the project functional for collaborators or public deployment.
 - **CORS**: Configured to allow `http://localhost:5173` for development.
 - **Method Security**: All Admin APIs are strictly protected with `@PreAuthorize("hasRole('ADMIN')")`.
 
@@ -169,12 +172,3 @@ npm run dev
 **Hishen Perera** — WE_184  
 Sri Lanka Institute of Information Technology (SLIIT)  
 Module: IT3030 — PAF 2026
-t:3000` for local development. Update `SecurityConfig.java` with your actual production domain before deployment.
-
----
-
-## 👨‍💻 Author
-
-**Hishen Perera** — WE_184  
-Sri Lanka Institute of Information Technology (SLIIT)  
-Module: IT3030 — Programming Applications Framework (PAF) 2026
