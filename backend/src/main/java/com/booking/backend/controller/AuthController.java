@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Collections;
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.Map;
 
 @RestController
@@ -14,10 +14,14 @@ import java.util.Map;
 public class AuthController {
 
     @GetMapping("/me")
-    public Map<String, Object> getCurrentUser(@AuthenticationPrincipal OAuth2User principal) {
+    public Map<String, Object> getCurrentUser(
+            @AuthenticationPrincipal OAuth2User principal,
+            HttpServletResponse response) {
         if (principal != null) {
             return principal.getAttributes();
         }
-        return Collections.singletonMap("error", "Not authenticated");
+        // Return 401 so the frontend can detect unauthenticated state
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        return null;
     }
 }
