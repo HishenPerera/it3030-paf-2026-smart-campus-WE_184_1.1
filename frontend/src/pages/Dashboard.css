@@ -63,6 +63,24 @@
   border-color: rgba(234, 67, 53, 0.4);
 }
 
+.admin-btn {
+  margin-left: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: rgba(99, 102, 241, 0.15);
+  color: #a5b4fc;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+.admin-btn:hover {
+  background-color: rgba(99, 102, 241, 0.35);
+  border-color: rgba(99, 102, 241, 0.6);
+  color: #fff;
+}
+
 .dashboard-main {
   padding: 2rem;
   max-width: 1200px;
