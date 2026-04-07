@@ -1,9 +1,16 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:8080',
+  baseURL: 'http://localhost:8081',
   withCredentials: true,
 });
+
+// ── Facilities & Assets Catalogue ────────────────
+export const fetchResources = () => api.get('/api/resources').then(r => r.data);
+export const addResource = (resourceData) => api.post('/api/resources', resourceData).then(r => r.data);
+export const updateResource = (id, resourceData) => api.put(`/api/resources/${id}`, resourceData).then(r => r.data);
+export const deleteResource = (id) => api.delete(`/api/resources/${id}`).then(r => r.data);
+
 
 // // ── Halls ────────────────────────────────────────────────
 // export const fetchHalls = () => api.get('/api/halls').then(r => r.data);
@@ -29,8 +36,9 @@ export const updateUserRole = (id, role) => api.put(`/api/admin/users/${id}/role
 
 // ── Auth ─────────────────────────────────────────────────
 export const loginWithGoogle = () => {
-  window.location.href = 'http://localhost:8080/oauth2/authorization/google';
+  window.location.href = 'http://localhost:8081/oauth2/authorization/google';
 };
 export const logout = () => api.post('/api/logout').then(r => r.data);
 
 export default api;
+
