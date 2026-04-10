@@ -30,3 +30,4 @@ public class User {
     @Builder.Default
     private Role role = Role.USER;
 }
+// Base entity created for User
