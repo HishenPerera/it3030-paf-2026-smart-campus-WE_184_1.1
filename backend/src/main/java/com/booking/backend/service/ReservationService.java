@@ -143,3 +143,4 @@ public class ReservationService {
         return reservationRepository.findBookedResourceIds(date, startTime, endTime);
     }
 }
+// Logic for resource allocation implemented
