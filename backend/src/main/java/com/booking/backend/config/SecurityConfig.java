@@ -103,3 +103,4 @@ public class SecurityConfig {
         return source;
     }
 }
+// Custom error handlers configured for resource conflicts
