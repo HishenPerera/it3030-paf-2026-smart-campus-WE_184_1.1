@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchCurrentUser, logout } from '../api/api';
+import NotificationBell from '../components/NotificationBell';
 import './Dashboard.css';
 
 export default function Dashboard() {
@@ -57,6 +58,7 @@ export default function Dashboard() {
           <h2>SLIIT Bookings</h2>
         </div>
         <div className="header-profile">
+          <NotificationBell />
           <img src={user.picture || user.avatar_url || `https://ui-avatars.com/api/?name=${user.name}&background=random`} alt="Avatar" className="avatar" />
           <div className="profile-info">
             <span className="profile-name">{user.name || user.login}</span>

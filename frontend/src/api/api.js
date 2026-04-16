@@ -15,10 +15,12 @@ export const fetchCurrentUser = () => api.get('/api/user/me').then(r => r.data);
 export const fetchAllUsers = () => api.get('/api/admin/users').then(r => r.data);
 export const updateUserRole = (id, role) => api.put(`/api/admin/users/${id}/role`, { role }).then(r => r.data);
 
-// // ── Notifications ────────────────────────────────────────
-// export const fetchNotifications = () => api.get('/api/notifications').then(r => r.data);
-// export const markNotificationRead = (id) => api.put(`/api/notifications/${id}/read`).then(r => r.data);
-// export const deleteNotification = (id) => api.delete(`/api/notifications/${id}`).then(r => r.data);
+// ── Notifications ────────────────────────────────────────
+export const fetchNotifications = () => api.get('/api/notifications').then(r => r.data);
+export const markNotificationRead = (id) => api.put(`/api/notifications/${id}/read`).then(r => r.data);
+export const sendNotification = (payload) => api.post('/api/notifications/send', payload).then(r => r.data);
+export const fetchNotificationBatches = () => api.get('/api/notifications/batches').then(r => r.data);
+export const deleteNotificationBatch = (batchId) => api.delete(`/api/notifications/batches/${batchId}`).then(r => r.data);
 
 // // ── Bookings ─────────────────────────────────────────────
 // export const fetchMyBookings = () => api.get('/api/bookings').then(r => r.data);

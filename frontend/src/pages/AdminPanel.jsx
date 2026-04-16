@@ -1,11 +1,13 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchAllUsers, updateUserRole, fetchCurrentUser } from '../api/api';
+import { fetchAllUsers, updateUserRole, fetchCurrentUser, sendNotification, fetchNotificationBatches, deleteNotificationBatch } from '../api/api';
+import NotificationBell from '../components/NotificationBell';
 import './AdminPanel.css';
 
 const NAV_ITEMS = [
   { id: 'overview', icon: 'bi-bar-chart-fill', label: 'Overview' },
   { id: 'users', icon: 'bi-people-fill', label: 'User Management' },
+  { id: 'notifications', icon: 'bi-bell-fill', label: 'Send Notifications' },
 ];
 
 const PAGE_SIZE_OPTIONS = [5, 10, 20, 50];
@@ -28,6 +30,15 @@ export default function AdminPanel() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
+  // Notification form state
+  const [notifMessage, setNotifMessage] = useState('');
+  const [notifType, setNotifType] = useState('NOTIFICATION');
+  const [notifTarget, setNotifTarget] = useState('ALL');
+  const [expiresIn, setExpiresIn] = useState('NEVER');
+  const [notifStatus, setNotifStatus] = useState(null);
+  
+  const [batches, setBatches] = useState([]);
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -41,6 +52,9 @@ export default function AdminPanel() {
         const initial = {};
         allUsers.forEach(u => { initial[u.id] = u.role; });
         setRoleChanges(initial);
+        
+        const activeBatches = await fetchNotificationBatches();
+        setBatches(activeBatches);
       } catch (err) {
         if (err.response?.status === 401 || err.response?.status === 403) {
           navigate('/login');
@@ -66,6 +80,16 @@ export default function AdminPanel() {
       alert('Failed to update role. Please try again.');
     } finally {
       setSaving(prev => ({ ...prev, [userId]: false }));
+    }
+  };
+
+  const handleDeleteBatch = async (batchId) => {
+    if (!window.confirm("Are you sure you want to permanently delete this broadcast?")) return;
+    try {
+      await deleteNotificationBatch(batchId);
+      setBatches(prev => prev.filter(b => b.batchId !== batchId));
+    } catch (err) {
+      alert("Failed to delete broadcast");
     }
   };
 
@@ -192,6 +216,7 @@ export default function AdminPanel() {
             </div>
           </div>
           <div className="topbar-right">
+            <NotificationBell />
             <span className="total-badge">{users.length} Users</span>
             <div className="topbar-time">
               {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
@@ -435,6 +460,158 @@ export default function AdminPanel() {
                 </div>
               </div>
             )}
+          </section>
+        )}
+
+        {/* ── NOTIFICATIONS TAB ── */}
+        {activeNav === 'notifications' && (
+          <section className="content-section animate-fade-in">
+            <div className="section-heading">
+              <h1>Send Notifications</h1>
+              <p>Broadcast alerts or regular notifications to users across the platform.</p>
+            </div>
+            
+            <div className="notification-form-card glass-panel">
+              {notifStatus && (
+                <div className={`form-status-banner ${notifStatus.error ? 'status-error' : 'status-success'}`}>
+                  {notifStatus.message}
+                </div>
+              )}
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                setNotifStatus(null);
+                if (!notifMessage.trim()) return;
+                
+                try {
+                  await sendNotification({
+                    message: notifMessage,
+                    type: notifType,
+                    target: notifTarget,
+                    expiresIn: expiresIn
+                  });
+                  setNotifStatus({ error: false, message: 'Notification sent successfully!' });
+                  setNotifMessage('');
+                  // Refresh history
+                  const bList = await fetchNotificationBatches();
+                  setBatches(bList);
+                } catch (err) {
+                  setNotifStatus({ error: true, message: 'Failed to send notification.' });
+                }
+              }} className="notification-form">
+                
+                <div className="form-group">
+                  <label>Message Content</label>
+                  <textarea 
+                    value={notifMessage} 
+                    onChange={e => setNotifMessage(e.target.value)}
+                    placeholder="Enter notification or alert message..."
+                    required
+                    className="notif-textarea"
+                    rows="4"
+                  />
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Type</label>
+                    <select 
+                      value={notifType} 
+                      onChange={e => setNotifType(e.target.value)}
+                      className="notif-select"
+                    >
+                      <option value="NOTIFICATION">Standard Notification</option>
+                      <option value="ALERT">Global Alert (Banner)</option>
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Target Audience</label>
+                    <select 
+                      value={notifTarget} 
+                      onChange={e => setNotifTarget(e.target.value)}
+                      className="notif-select"
+                    >
+                      <option value="ALL">All Users</option>
+                      <option value="USERS">Normal Users Only</option>
+                      <option value="ADMINS">Administrators Only</option>
+                    </select>
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>Expires In</label>
+                    <select 
+                      value={expiresIn} 
+                      onChange={e => setExpiresIn(e.target.value)}
+                      className="notif-select"
+                    >
+                      <option value="NEVER">Never / Manual Deletion</option>
+                      <option value="1HR">1 Hour</option>
+                      <option value="12HR">12 Hours</option>
+                      <option value="1DAY">1 Day</option>
+                      <option value="3DAY">3 Days</option>
+                      <option value="7DAY">7 Days</option>
+                    </select>
+                  </div>
+                </div>
+
+                <button type="submit" className="send-notif-btn" disabled={!notifMessage.trim()}>
+                  <i className="bi bi-send-fill"></i> Send Notification
+                </button>
+              </form>
+            </div>
+
+            <div className="section-heading" style={{ marginTop: '40px' }}>
+              <h2>Active Broadcasts</h2>
+              <p>Manage sent notifications and delete them to remove from all user queues.</p>
+            </div>
+            
+            <div className="user-table-wrapper glass-panel">
+              <table className="user-table">
+                <thead>
+                  <tr>
+                    <th>Dates (Sent / Expires)</th>
+                    <th>Message</th>
+                    <th>Type</th>
+                    <th>Reach</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {batches.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="empty-state">
+                        <i className="bi bi-broadcast"></i>
+                        <p>No active broadcasts right now.</p>
+                      </td>
+                    </tr>
+                  ) : (
+                    batches.map(b => (
+                      <tr key={b.batchId}>
+                        <td>
+                          <div><b>Sent:</b> {new Date(b.createdAt).toLocaleString()}</div>
+                          <div><b>Expiry:</b> {b.expiresAt ? new Date(b.expiresAt).toLocaleString() : 'Never'}</div>
+                        </td>
+                        <td style={{ maxWidth: '300px', whiteSpace: 'normal' }}>{b.message}</td>
+                        <td>
+                          <span className={`role-badge role-${b.type.toLowerCase()}`}>{b.type}</span>
+                        </td>
+                        <td>{b.count} Users</td>
+                        <td>
+                          <button 
+                            className="delete-batch-btn"
+                            onClick={() => handleDeleteBatch(b.batchId)}
+                            title="Delete this broadcast globally"
+                          >
+                            <i className="bi bi-trash-fill"></i> Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+
           </section>
         )}
       </main>
