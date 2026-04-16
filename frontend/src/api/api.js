@@ -68,3 +68,4 @@ export const loginWithGoogle = () => {
 export const logout = () => api.post('/api/logout').then(r => r.data);
 
 export default api;
+// Axios base configured for API connectivity
