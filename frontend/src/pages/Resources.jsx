@@ -47,7 +47,7 @@ const Resources = () => {
     const currentBooking = resources.find(r => r.date === today);
     const totalBookings = resources.length;
 
-    // වැඩිපුරම භාවිතා කරන තට්ටුව සොයා ගැනීම
+    // to see most using floor
     const floorCounts = resources.reduce((acc, r) => {
         acc[r.location] = (acc[r.location] || 0) + 1;
         return acc;
@@ -299,17 +299,17 @@ const Resources = () => {
                                         <label>Capacity (Auto Header)</label>
                                         <div className="input-with-icon" style={{ opacity: 0.85 }}>
                                             <Users size={16} className="field-icon" style={{ color: '#64748b' }} />
-                                            <input 
-                                                type="number" 
-                                                value={formData.capacity} 
-                                                readOnly 
+                                            <input
+                                                type="number"
+                                                value={formData.capacity}
+                                                readOnly
                                                 className="readonly-input locked-solid-input"
-                                                style={{ 
-                                                    cursor: 'not-allowed', 
-                                                    background: 'rgba(30, 41, 59, 0.6)', 
+                                                style={{
+                                                    cursor: 'not-allowed',
+                                                    background: 'rgba(30, 41, 59, 0.6)',
                                                     color: '#94a3b8',
                                                     borderColor: 'rgba(255, 255, 255, 0.05)'
-                                                }} 
+                                                }}
                                             />
                                         </div>
                                     </div>
