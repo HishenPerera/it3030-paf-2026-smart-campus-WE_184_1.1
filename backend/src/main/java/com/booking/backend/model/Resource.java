@@ -14,15 +14,18 @@ public class Resource {
     private String name;
 
     @NotBlank(message = "Type is required")
-    private String type; // Lecture Hall, Lab, Projector
+    private String type; 
 
     @Min(value = 1, message = "Capacity must be at least 1")
     private Integer capacity;
 
     @NotBlank(message = "Location is required")
-    private String location;
+    private String location;  
 
-    private String status = "ACTIVE"; // ACTIVE or OUT_OF_SERVICE
+    private String status = "ACTIVE"; 
+    
+    @NotBlank(message = "Registration date is required")
+    private String date;
 }
     
 
