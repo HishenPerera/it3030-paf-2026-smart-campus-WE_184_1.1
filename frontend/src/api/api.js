@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:8081',
+  baseURL: 'http://localhost:8080',
   withCredentials: true,
 });
 
@@ -36,7 +36,7 @@ export const updateUserRole = (id, role) => api.put(`/api/admin/users/${id}/role
 
 // ── Auth ─────────────────────────────────────────────────
 export const loginWithGoogle = () => {
-  window.location.href = 'http://localhost:8081/oauth2/authorization/google';
+  window.location.href = 'http://localhost:8080/oauth2/authorization/google';
 };
 export const logout = () => api.post('/api/logout').then(r => r.data);
 
