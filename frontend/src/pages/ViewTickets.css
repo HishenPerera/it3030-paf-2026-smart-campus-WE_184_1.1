@@ -141,6 +141,20 @@
   align-items: center;
 }
 
+.ticket-details-btn {
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: rgba(255,255,255,0.08);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.ticket-details-btn:hover {
+  background: rgba(255,255,255,0.15);
+}
+
 .ticket-id {
   font-weight: 600;
   color: var(--text-secondary);

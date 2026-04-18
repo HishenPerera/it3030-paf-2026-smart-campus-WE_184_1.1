@@ -41,6 +41,14 @@ public class Ticket {
     @Column(name = "image_url")
     private List<String> imageUrls;
 
+    @ElementCollection
+    @CollectionTable(name = "ticket_comments", joinColumns = @JoinColumn(name = "ticket_id"))
+    @Column(name = "comment")
+    private List<String> comments;
+
+    @Column(length = 2000)
+    private String resolutionNotes;
+
     private LocalDateTime createdAt;
 
     @Column(nullable = false)

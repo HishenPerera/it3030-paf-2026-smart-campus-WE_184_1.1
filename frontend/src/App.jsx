@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard';
 import AdminPanel from './pages/AdminPanel';
 import CreateTicket from './pages/CreateTicket';
 import ViewTickets from './pages/ViewTickets';
+import TicketDetails from './pages/TicketDetails';
 import { NotificationProvider } from './context/NotificationContext';
 import AlertBanner from './components/AlertBanner';
 
@@ -19,6 +20,7 @@ function App() {
           <Route path="/admin" element={<AdminPanel />} />
           <Route path="/create-ticket" element={<CreateTicket />} />
           <Route path="/tickets" element={<ViewTickets />} />
+          <Route path="/tickets/:id" element={<TicketDetails />} />
           
           {/* Default route redirects to dashboard, which will handle auth check */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />

@@ -213,6 +213,9 @@ export default function ViewTickets() {
                     </div>
                   </div>
                 )}
+                <button className="btn-secondary ticket-details-btn" onClick={() => navigate(`/tickets/${ticket.id}`)}>
+                  View Details
+                </button>
               </div>
             </div>
           ))}

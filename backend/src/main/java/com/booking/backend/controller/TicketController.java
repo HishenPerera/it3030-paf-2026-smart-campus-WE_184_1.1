@@ -68,4 +68,20 @@ public class TicketController {
                 
         return ResponseEntity.ok(tickets);
     }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getTicketById(
+            @AuthenticationPrincipal OAuth2User principal,
+            @PathVariable Long id) {
+
+        String email = null;
+        if (principal != null) {
+            email = principal.getAttribute("email");
+        }
+
+        return ticketService.getTicketById(email, id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(java.util.Map.of("message", "Ticket not found or access denied.")));
+    }
 }

@@ -16,6 +16,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -104,5 +105,33 @@ public class TicketService {
                    .and(com.booking.backend.repository.TicketSpecification.createdOnDate(dateStr));
 
         return ticketRepository.findAll(spec);
+    }
+
+    public Optional<Ticket> getTicketById(String email, Long ticketId) {
+        User requestUser = null;
+        if (email != null) {
+            requestUser = userRepository.findByEmail(email).orElse(null);
+        }
+        if (requestUser == null) {
+            return Optional.empty();
+        }
+
+        Optional<Ticket> optionalTicket = ticketRepository.findById(ticketId);
+        if (optionalTicket.isEmpty()) {
+            return Optional.empty();
+        }
+
+        Ticket ticket = optionalTicket.get();
+        if (requestUser.getRole() == com.booking.backend.model.Role.ADMIN) {
+            return Optional.of(ticket);
+        }
+
+        boolean isOwner = ticket.getUser() != null && ticket.getUser().getId().equals(requestUser.getId());
+        boolean isAssignedTech = ticket.getAssignedTechnician() != null && ticket.getAssignedTechnician().getId().equals(requestUser.getId());
+        if (isOwner || isAssignedTech) {
+            return Optional.of(ticket);
+        }
+
+        return Optional.empty();
     }
 }

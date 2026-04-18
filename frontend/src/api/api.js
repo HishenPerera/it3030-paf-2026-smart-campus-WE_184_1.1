@@ -31,6 +31,7 @@ export const deleteNotificationBatch = (batchId) => api.delete(`/api/notificatio
 
 // ── Tickets ──────────────────────────────────────────────
 export const fetchTickets = (params) => api.get('/api/tickets', { params }).then(r => r.data);
+export const fetchTicketById = (id) => api.get(`/api/tickets/${id}`).then(r => r.data);
 
 export const createTicket = (formData) => api.post('/api/tickets', formData, {
   headers: {
