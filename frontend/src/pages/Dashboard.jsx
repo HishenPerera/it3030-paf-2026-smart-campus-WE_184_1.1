@@ -82,6 +82,20 @@ export default function Dashboard() {
               {JSON.stringify(user, null, 2)}
             </pre>
           </div>
+
+          <div className="action-cards-container" style={{ marginTop: '2rem', display: 'grid', gap: '1rem', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
+            <div className="action-card glass-panel" style={{ padding: '1.5rem', textAlign: 'center', background: 'rgba(255, 255, 255, 0.05)' }}>
+              <h3>Maintenance & Incidents</h3>
+              <p style={{ margin: '1rem 0', color: 'rgba(255,255,255,0.7)' }}>Report issues or request maintenance for campus facilities, classrooms, or equipment.</p>
+              <button 
+                className="btn-primary" 
+                onClick={() => navigate('/create-ticket')}
+                style={{ width: '100%', padding: '0.8rem 1.5rem', borderRadius: '8px', border: 'none', background: 'linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%)', color: 'white', cursor: 'pointer', fontWeight: 600, fontSize: '1.05rem', boxShadow: '0 4px 15px rgba(99, 102, 241, 0.3)' }}
+              >
+                Create New Ticket
+              </button>
+            </div>
+          </div>
         </div>
       </main>
     </div>

@@ -39,8 +39,12 @@ export const NotificationProvider = ({ children }) => {
   const normalNotifications = notifications.filter(n => n.type === 'NOTIFICATION');
   const unreadNormalCount = normalNotifications.filter(n => !n.isRead).length;
 
+  const showNotification = (message, type) => {
+    console.log(`${type}: ${message}`);
+  };
+
   return (
-    <NotificationContext.Provider value={{ notifications, alerts, normalNotifications, unreadNormalCount, markAsRead, fetchMyNotifications }}>
+    <NotificationContext.Provider value={{ notifications, alerts, normalNotifications, unreadNormalCount, markAsRead, fetchMyNotifications, showNotification }}>
       {children}
     </NotificationContext.Provider>
   );

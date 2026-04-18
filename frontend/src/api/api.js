@@ -29,6 +29,13 @@ export const deleteNotificationBatch = (batchId) => api.delete(`/api/notificatio
 //   api.post('/api/bookings', { seatId, eventDate }).then(r => r.data);
 // export const cancelBooking = (id) => api.delete(`/api/bookings/${id}`).then(r => r.data);
 
+// ── Tickets ──────────────────────────────────────────────
+export const createTicket = (formData) => api.post('/api/tickets', formData, {
+  headers: {
+    'Content-Type': 'multipart/form-data'
+  }
+}).then(r => r.data);
+
 // ── Auth ─────────────────────────────────────────────────
 export const loginWithGoogle = () => {
   window.location.href = 'http://localhost:8080/oauth2/authorization/google';
