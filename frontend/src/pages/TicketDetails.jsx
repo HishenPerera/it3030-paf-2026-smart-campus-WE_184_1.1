@@ -73,9 +73,15 @@ export default function TicketDetails() {
     if (!ticket) return [];
     const next = STATUS_TRANSITIONS[ticket.status] || [];
     if (userRole === 'ADMIN') {
-      return [...next, 'Rejected'];
+      // Admin can reject from any active state and close a resolved ticket
+      const opts = new Set([...next, 'Rejected']);
+      return Array.from(opts);
     }
-    return next;
+    // Technicians should not be able to close tickets; only resolve them
+    if (userRole === 'TECHNICIAN') {
+      return next.filter(s => s !== 'Closed' && s !== 'Rejected');
+    }
+    return [];
   };
 
   const submitStatusUpdate = async () => {
@@ -114,7 +120,7 @@ export default function TicketDetails() {
   };
 
   const submitTechnicianAssignment = async () => {
-    const technicianId = selectedTechnician ? parseInt(selectedTechnician) : null;
+    const technicianId = selectedTechnician && selectedTechnician !== 'NONE' ? parseInt(selectedTechnician) : null;
 
     setAssigning(true);
     try {
@@ -350,7 +356,7 @@ export default function TicketDetails() {
               <div className="form-row">
                 <select value={selectedTechnician} onChange={(e) => setSelectedTechnician(e.target.value)}>
                   <option value="">Select technician</option>
-                  <option value="">Unassign</option>
+                  <option value="NONE">Unassign</option>
                   {technicians.map(tech => (
                     <option key={tech.id} value={tech.id}>{tech.name || tech.email}</option>
                   ))}
