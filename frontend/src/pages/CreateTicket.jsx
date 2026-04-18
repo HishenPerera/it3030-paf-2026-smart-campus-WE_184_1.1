@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createTicket } from '../api/api';
 import { UploadCloud, X, ArrowLeft, CheckCircle2 } from 'lucide-react';
-import { useNotifications } from '../context/NotificationContext';
+import useNotifications from '../context/useNotifications';
 import './CreateTicket.css';
 
 export default function CreateTicket() {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchTickets, fetchCurrentUser, fetchTechnicians } from '../api/api';
-import { useNotifications } from '../context/NotificationContext';
+import useNotifications from '../context/useNotifications';
 import { Filter, ArrowLeft, Image as ImageIcon, Search } from 'lucide-react';
 import './ViewTickets.css';
 
@@ -37,7 +37,7 @@ export default function ViewTickets() {
             const parsed = JSON.parse(saved);
             setFilters(prev => ({ ...prev, ...parsed }));
           }
-        } catch (e) {
+        } catch {
           // ignore localStorage issues
         }
 
@@ -47,12 +47,12 @@ export default function ViewTickets() {
           try {
             const techList = await fetchTechnicians();
             setTechnicians(techList);
-          } catch (err) {
+          } catch {
             // ignore if the technician list cannot be fetched
           }
         }
         await loadTickets();
-      } catch (err) {
+      } catch {
         showNotification('Failed to load tickets', 'error');
         setLoading(false);
       }
@@ -77,10 +77,10 @@ export default function ViewTickets() {
       // Persist filters for next visit
       try {
         localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(currentFilters));
-      } catch (e) {
+      } catch {
         // ignore storage errors
       }
-    } catch (err) {
+    } catch {
       showNotification('Failed to fetch tickets', 'error');
     } finally {
       setLoading(false);
@@ -103,7 +103,7 @@ export default function ViewTickets() {
     loadTickets(emptyFilters);
     try {
       localStorage.removeItem(FILTER_STORAGE_KEY);
-    } catch (e) {
+    } catch {
       // ignore
     }
   };

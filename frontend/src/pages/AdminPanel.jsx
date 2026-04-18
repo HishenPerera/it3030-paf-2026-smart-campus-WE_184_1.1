@@ -72,7 +72,7 @@ export default function AdminPanel() {
         try {
           const techList = await fetchTechnicians();
           setTechnicians(techList);
-        } catch (e) {
+        } catch {
           // ignore technician list failures
         }
 
@@ -102,7 +102,7 @@ export default function AdminPanel() {
         });
         const data = await fetchTickets(params);
         setTickets(Array.isArray(data) ? data : []);
-      } catch (e) {
+      } catch {
         setError('Failed to load tickets.');
       } finally {
         setTicketsLoading(false);
@@ -122,7 +122,7 @@ export default function AdminPanel() {
       });
       const data = await fetchTickets(params);
       setTickets(Array.isArray(data) ? data : []);
-    } catch (e2) {
+    } catch {
       setError('Failed to load tickets.');
     } finally {
       setTicketsLoading(false);
@@ -136,7 +136,7 @@ export default function AdminPanel() {
     try {
       const data = await fetchTickets({});
       setTickets(Array.isArray(data) ? data : []);
-    } catch (e) {
+    } catch {
       setError('Failed to load tickets.');
     } finally {
       setTicketsLoading(false);
@@ -163,7 +163,7 @@ export default function AdminPanel() {
     try {
       await deleteNotificationBatch(batchId);
       setBatches(prev => prev.filter(b => b.batchId !== batchId));
-    } catch (err) {
+    } catch {
       alert("Failed to delete broadcast");
     }
   };
@@ -707,7 +707,7 @@ export default function AdminPanel() {
                   // Refresh history
                   const bList = await fetchNotificationBatches();
                   setBatches(bList);
-                } catch (err) {
+                } catch {
                   setNotifStatus({ error: true, message: 'Failed to send notification.' });
                 }
               }} className="notification-form">

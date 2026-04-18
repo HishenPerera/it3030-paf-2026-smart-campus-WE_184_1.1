@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { fetchTicketById, fetchCurrentUser, updateTicketStatus, fetchTechnicians, assignTechnician, deleteTicketAttachment, fetchComments, addComment, updateComment, deleteComment } from '../api/api';
-import { useNotifications } from '../context/NotificationContext';
+import useNotifications from '../context/useNotifications';
 import { ArrowLeft, Image as ImageIcon, Edit2, Trash2, MessageSquare, Send } from 'lucide-react';
 import './TicketDetails.css';
 
@@ -53,7 +53,7 @@ export default function TicketDetails() {
           const techs = await fetchTechnicians();
           setTechnicians(techs);
         }
-      } catch (err) {
+      } catch {
         showNotification('Unable to load ticket details.', 'error');
       } finally {
         setLoading(false);
@@ -112,7 +112,7 @@ export default function TicketDetails() {
       setRejectionReason('');
       setResolutionNotes('');
       showNotification('Ticket status updated successfully.', 'success');
-    } catch (err) {
+    } catch {
       showNotification('Failed to update ticket status.', 'error');
     } finally {
       setUpdating(false);
@@ -128,7 +128,7 @@ export default function TicketDetails() {
       setTicket(updated);
       setSelectedTechnician('');
       showNotification('Technician assigned successfully.', 'success');
-    } catch (err) {
+    } catch {
       showNotification('Failed to assign technician.', 'error');
     } finally {
       setAssigning(false);
@@ -147,7 +147,7 @@ export default function TicketDetails() {
       setComments(prev => [...prev, comment]);
       setNewComment('');
       showNotification('Comment added successfully.', 'success');
-    } catch (err) {
+    } catch {
       showNotification('Failed to add comment.', 'error');
     } finally {
       setCommentLoading(false);
@@ -172,7 +172,7 @@ export default function TicketDetails() {
       setEditingComment(null);
       setEditCommentContent('');
       showNotification('Comment updated successfully.', 'success');
-    } catch (err) {
+    } catch {
       showNotification('Failed to update comment.', 'error');
     } finally {
       setCommentLoading(false);
@@ -189,7 +189,7 @@ export default function TicketDetails() {
       await deleteComment(id, commentId);
       setComments(prev => prev.filter(c => c.id !== commentId));
       showNotification('Comment deleted successfully.', 'success');
-    } catch (err) {
+    } catch {
       showNotification('Failed to delete comment.', 'error');
     } finally {
       setCommentLoading(false);
@@ -205,7 +205,7 @@ export default function TicketDetails() {
       const updated = await deleteTicketAttachment(id, imageUrl);
       setTicket(updated);
       showNotification('Attachment removed successfully.', 'success');
-    } catch (err) {
+    } catch {
       showNotification('Failed to remove attachment.', 'error');
     } finally {
       setDeletingAttachment('');

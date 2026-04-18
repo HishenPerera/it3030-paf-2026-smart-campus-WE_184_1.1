@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNotifications } from '../context/NotificationContext';
+import useNotifications from '../context/useNotifications';
 import './AlertBanner.css';
 
 export default function AlertBanner() {

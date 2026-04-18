@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchCurrentUser, fetchDashboardStats, logout } from '../api/api';
 import NotificationBell from '../components/NotificationBell';
-import { useNotifications } from '../context/NotificationContext';
+import useNotifications from '../context/useNotifications';
 import './Dashboard.css';
 
 export default function Dashboard() {
@@ -47,7 +47,7 @@ export default function Dashboard() {
       try {
         const data = await fetchDashboardStats();
         setStats(data);
-      } catch (err) {
+      } catch {
         // Don't block dashboard on stats failures
       }
     };
