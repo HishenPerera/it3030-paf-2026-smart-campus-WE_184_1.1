@@ -34,6 +34,12 @@
   margin: 0;
 }
 
+.ticket-subtitle {
+  margin: 0.3rem 0 0;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 0.95rem;
+}
+
 .form-wrapper {
   padding: 2rem;
 }
@@ -113,6 +119,12 @@
 .upload-zone:hover {
   background: rgba(255, 255, 255, 0.05);
   border-color: var(--primary-color);
+}
+
+.upload-zone.dragging {
+  background: rgba(99, 102, 241, 0.12);
+  border-color: rgba(99, 102, 241, 0.7);
+  transform: translateY(-1px);
 }
 
 .upload-zone p {

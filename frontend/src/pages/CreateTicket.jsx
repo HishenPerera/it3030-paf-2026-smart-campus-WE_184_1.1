@@ -17,6 +17,7 @@ export default function CreateTicket() {
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [dragging, setDragging] = useState(false);
   
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
@@ -27,8 +28,7 @@ export default function CreateTicket() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleFileChange = (e) => {
-    const selectedFiles = Array.from(e.target.files);
+  const validateAndAppendFiles = (selectedFiles) => {
     const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif'];
     const maxSize = 5 * 1024 * 1024;
 
@@ -51,6 +51,18 @@ export default function CreateTicket() {
     }
 
     setFiles(prev => [...prev, ...validatedFiles].slice(0, 3));
+  }
+
+  const handleFileChange = (e) => {
+    const selectedFiles = Array.from(e.target.files || []);
+    validateAndAppendFiles(selectedFiles);
+  };
+
+  const onDropFiles = (e) => {
+    e.preventDefault();
+    setDragging(false);
+    const selectedFiles = Array.from(e.dataTransfer.files || []);
+    validateAndAppendFiles(selectedFiles);
   };
 
   const removeFile = (index) => {
@@ -64,6 +76,10 @@ export default function CreateTicket() {
     e.preventDefault();
     if (files.length > 3) {
       showNotification('Maximum 3 files allowed', 'error');
+      return;
+    }
+    if (!formData.resourceOrLocation.trim() || !formData.category || !formData.description.trim() || !formData.contactDetails.trim()) {
+      showNotification('Please fill all required fields before submitting.', 'error');
       return;
     }
 
@@ -112,7 +128,10 @@ export default function CreateTicket() {
         <button className="back-btn" onClick={() => navigate('/dashboard')}>
           <ArrowLeft size={20} /> Back
         </button>
-        <h2>Create a New Ticket</h2>
+        <div>
+          <h2>Report Incident</h2>
+          <p className="ticket-subtitle">Submit a maintenance or incident report with optional photo evidence (max 3 images).</p>
+        </div>
       </div>
 
       <main className="form-wrapper glass-panel">
@@ -181,10 +200,19 @@ export default function CreateTicket() {
           <div className="upload-section">
             <label>Evidence Images (Max 3)</label>
             
-            <div className="upload-zone" onClick={() => fileInputRef.current?.click()}>
+            <div
+              className={`upload-zone ${dragging ? 'dragging' : ''}`}
+              onClick={() => fileInputRef.current?.click()}
+              onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+              onDragLeave={(e) => { e.preventDefault(); setDragging(false); }}
+              onDrop={onDropFiles}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') fileInputRef.current?.click(); }}
+            >
               <UploadCloud size={32} />
-              <p>Click to browse or drag functionality</p>
-              <span>JPEG, PNG formats supported</span>
+              <p>Click to browse or drag & drop images</p>
+              <span>PNG, JPG, JPEG, GIF · Max 5MB each · {files.length}/3 selected</span>
               <input 
                 type="file" 
                 ref={fileInputRef} 
