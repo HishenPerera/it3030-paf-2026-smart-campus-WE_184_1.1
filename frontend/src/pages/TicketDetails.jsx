@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { fetchTicketById, fetchCurrentUser, updateTicketStatus, fetchTechnicians, assignTechnician } from '../api/api';
+import { fetchTicketById, fetchCurrentUser, updateTicketStatus, fetchTechnicians, assignTechnician, fetchComments, addComment, updateComment, deleteComment } from '../api/api';
 import { useNotifications } from '../context/NotificationContext';
-import { ArrowLeft, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Image as ImageIcon, Edit2, Trash2, MessageSquare, Send } from 'lucide-react';
 import './TicketDetails.css';
 
 const STATUS_TRANSITIONS = {
@@ -18,6 +18,7 @@ export default function TicketDetails() {
   const [ticket, setTicket] = useState(null);
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState('USER');
+  const [currentUserId, setCurrentUserId] = useState(null);
   const [selectedStatus, setSelectedStatus] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
   const [resolutionNotes, setResolutionNotes] = useState('');
@@ -25,6 +26,11 @@ export default function TicketDetails() {
   const [technicians, setTechnicians] = useState([]);
   const [selectedTechnician, setSelectedTechnician] = useState('');
   const [assigning, setAssigning] = useState(false);
+  const [comments, setComments] = useState([]);
+  const [newComment, setNewComment] = useState('');
+  const [editingComment, setEditingComment] = useState(null);
+  const [editCommentContent, setEditCommentContent] = useState('');
+  const [commentLoading, setCommentLoading] = useState(false);
   const navigate = useNavigate();
   const { showNotification } = useNotifications();
 
@@ -32,12 +38,15 @@ export default function TicketDetails() {
     const loadData = async () => {
       setLoading(true);
       try {
-        const [ticketData, currentUser] = await Promise.all([
+        const [ticketData, currentUser, ticketComments] = await Promise.all([
           fetchTicketById(id),
-          fetchCurrentUser()
+          fetchCurrentUser(),
+          fetchComments(id)
         ]);
         setTicket(ticketData);
         setUserRole(currentUser.role || 'USER');
+        setCurrentUserId(currentUser.id || null);
+        setComments(ticketComments);
 
         if (currentUser.role === 'ADMIN') {
           const techs = await fetchTechnicians();
@@ -117,6 +126,72 @@ export default function TicketDetails() {
     } finally {
       setAssigning(false);
     }
+  };
+
+  const handleAddComment = async () => {
+    if (!newComment.trim()) {
+      showNotification('Please enter a comment.', 'error');
+      return;
+    }
+
+    setCommentLoading(true);
+    try {
+      const comment = await addComment(id, newComment.trim());
+      setComments(prev => [...prev, comment]);
+      setNewComment('');
+      showNotification('Comment added successfully.', 'success');
+    } catch (err) {
+      showNotification('Failed to add comment.', 'error');
+    } finally {
+      setCommentLoading(false);
+    }
+  };
+
+  const handleEditComment = (comment) => {
+    setEditingComment(comment.id);
+    setEditCommentContent(comment.content);
+  };
+
+  const handleUpdateComment = async () => {
+    if (!editCommentContent.trim()) {
+      showNotification('Please enter comment content.', 'error');
+      return;
+    }
+
+    setCommentLoading(true);
+    try {
+      const updated = await updateComment(id, editingComment, editCommentContent.trim());
+      setComments(prev => prev.map(c => c.id === editingComment ? updated : c));
+      setEditingComment(null);
+      setEditCommentContent('');
+      showNotification('Comment updated successfully.', 'success');
+    } catch (err) {
+      showNotification('Failed to update comment.', 'error');
+    } finally {
+      setCommentLoading(false);
+    }
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    if (!confirm('Are you sure you want to delete this comment?')) {
+      return;
+    }
+
+    setCommentLoading(true);
+    try {
+      await deleteComment(id, commentId);
+      setComments(prev => prev.filter(c => c.id !== commentId));
+      showNotification('Comment deleted successfully.', 'success');
+    } catch (err) {
+      showNotification('Failed to delete comment.', 'error');
+    } finally {
+      setCommentLoading(false);
+    }
+  };
+
+  const canModifyComment = (comment) => {
+    if (!comment?.author?.id) return false;
+    return comment.author.id === currentUserId || userRole === 'ADMIN';
   };
 
   if (loading) {
@@ -287,17 +362,102 @@ export default function TicketDetails() {
             <p className="empty-note">No evidence images uploaded.</p>
           )}
 
-          <div className="comments-block">
-            <h4>Comments</h4>
-            {ticket.comments && ticket.comments.length > 0 ? (
-              <ul>
-                {ticket.comments.map((comment, idx) => (
-                  <li key={idx}>{comment}</li>
-                ))}
-              </ul>
-            ) : (
-              <p className="empty-note">No comments added yet.</p>
-            )}
+          <div className="comments-section">
+            <h4><MessageSquare size={18} /> Comments</h4>
+
+            {/* Add new comment */}
+            <div className="add-comment">
+              <textarea
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="Add a comment..."
+                rows={3}
+                disabled={commentLoading}
+              />
+              <button
+                className="btn-primary comment-btn"
+                onClick={handleAddComment}
+                disabled={commentLoading || !newComment.trim()}
+              >
+                <Send size={16} />
+                {commentLoading ? 'Adding...' : 'Add Comment'}
+              </button>
+            </div>
+
+            {/* Display comments */}
+            <div className="comments-list">
+              {comments.length > 0 ? (
+                comments.map((comment) => (
+                  <div key={comment.id} className="comment-item">
+                    <div className="comment-header">
+                      <div className="comment-author">
+                        <strong>{comment.author?.name || comment.author?.email || 'Unknown'}</strong>
+                        <span className="comment-date">
+                          {new Date(comment.createdAt).toLocaleString()}
+                        </span>
+                        {comment.updatedAt !== comment.createdAt && (
+                          <span className="comment-edited">(edited)</span>
+                        )}
+                      </div>
+                      {canModifyComment(comment) && (
+                        <div className="comment-actions">
+                          <button
+                            className="btn-icon"
+                            onClick={() => handleEditComment(comment)}
+                            disabled={commentLoading}
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                          <button
+                            className="btn-icon delete"
+                            onClick={() => handleDeleteComment(comment.id)}
+                            disabled={commentLoading}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {editingComment === comment.id ? (
+                      <div className="edit-comment">
+                        <textarea
+                          value={editCommentContent}
+                          onChange={(e) => setEditCommentContent(e.target.value)}
+                          rows={3}
+                          disabled={commentLoading}
+                        />
+                        <div className="edit-actions">
+                          <button
+                            className="btn-secondary"
+                            onClick={() => {
+                              setEditingComment(null);
+                              setEditCommentContent('');
+                            }}
+                            disabled={commentLoading}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            className="btn-primary"
+                            onClick={handleUpdateComment}
+                            disabled={commentLoading || !editCommentContent.trim()}
+                          >
+                            {commentLoading ? 'Updating...' : 'Update'}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="comment-content">
+                        {comment.content}
+                      </div>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <p className="empty-note">No comments yet. Be the first to add one!</p>
+              )}
+            </div>
           </div>
         </section>
       </div>

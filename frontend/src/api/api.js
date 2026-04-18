@@ -41,6 +41,12 @@ export const createTicket = (formData) => api.post('/api/tickets', formData, {
   }
 }).then(r => r.data);
 
+// ── Comments ──────────────────────────────────────────────
+export const fetchComments = (ticketId) => api.get(`/api/tickets/${ticketId}/comments`).then(r => r.data);
+export const addComment = (ticketId, content) => api.post(`/api/tickets/${ticketId}/comments`, { content }).then(r => r.data);
+export const updateComment = (ticketId, commentId, content) => api.put(`/api/tickets/${ticketId}/comments/${commentId}`, { content }).then(r => r.data);
+export const deleteComment = (ticketId, commentId) => api.delete(`/api/tickets/${ticketId}/comments/${commentId}`).then(r => r.data);
+
 // ── Auth ─────────────────────────────────────────────────
 export const loginWithGoogle = () => {
   window.location.href = 'http://localhost:8080/oauth2/authorization/google';

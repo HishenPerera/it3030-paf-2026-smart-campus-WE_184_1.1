@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/tickets")
@@ -31,7 +32,7 @@ public class TicketController {
         
         try {
             if (files != null && files.size() > 3) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(java.util.Map.of("message", "A maximum of 3 files allowed as evidence."));
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "A maximum of 3 files allowed as evidence."));
             }
 
             String email = null;
@@ -44,7 +45,7 @@ public class TicketController {
 
             return ResponseEntity.status(HttpStatus.CREATED).body(ticket);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(java.util.Map.of("message", "Error submitting ticket: " + e.getMessage()));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Error submitting ticket: " + e.getMessage()));
         }
     }
 
@@ -80,9 +81,9 @@ public class TicketController {
         }
 
         return ticketService.getTicketById(email, id)
-                .map(ResponseEntity::ok)
+                .<ResponseEntity<?>>map(ticket -> ResponseEntity.ok(ticket))
                 .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(java.util.Map.of("message", "Ticket not found or access denied.")));
+                        .body(Map.of("message", "Ticket not found or access denied.")));
     }
 
     @PutMapping("/{id}/assign")
@@ -99,9 +100,9 @@ public class TicketController {
         Long technicianId = payload.get("technicianId");
 
         return ticketService.assignTechnician(email, id, technicianId)
-                .map(ResponseEntity::ok)
+                .<ResponseEntity<?>>map(updatedTicket -> ResponseEntity.ok(updatedTicket))
                 .orElse(ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(java.util.Map.of("message", "Unable to assign technician. You may not be authorized or the technician is invalid.")));
+                        .body(Map.of("message", "Unable to assign technician. You may not be authorized or the technician is invalid.")));
     }
 
     @PutMapping("/{id}/status")
@@ -120,7 +121,8 @@ public class TicketController {
         String resolutionNotes = (String) payload.get("resolutionNotes");
 
         return ticketService.updateTicketStatus(email, id, status, rejectionReason, resolutionNotes)
-                .map(ResponseEntity::ok)
+                .<ResponseEntity<?>>map(updatedTicket -> ResponseEntity.ok(updatedTicket))
                 .orElse(ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(java.util.Map.of("message", "Unable to update ticket status. You may not be authorized or the status transition is invalid.")));
+                        .body(Map.of("message", "Unable to update ticket status. You may not be authorized or the status transition is invalid.")));
     }
+}

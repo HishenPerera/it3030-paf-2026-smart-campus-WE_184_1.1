@@ -39,3 +39,4 @@ public class UserController {
                 .filter(user -> user.getRole() == Role.TECHNICIAN)
                 .toList();
     }
+}

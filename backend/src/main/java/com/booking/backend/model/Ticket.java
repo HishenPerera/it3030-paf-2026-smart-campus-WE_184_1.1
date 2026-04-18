@@ -1,5 +1,6 @@
 package com.booking.backend.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -41,10 +42,10 @@ public class Ticket {
     @Column(name = "image_url")
     private List<String> imageUrls;
 
-    @ElementCollection
-    @CollectionTable(name = "ticket_comments", joinColumns = @JoinColumn(name = "ticket_id"))
-    @Column(name = "comment")
-    private List<String> comments;
+    @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OrderBy("createdAt ASC")
+    @JsonManagedReference
+    private List<Comment> comments;
 
     @Column(length = 2000)
     private String resolutionNotes;
