@@ -5,6 +5,8 @@ import { useNotifications } from '../context/NotificationContext';
 import { Filter, ArrowLeft, Image as ImageIcon, Search } from 'lucide-react';
 import './ViewTickets.css';
 
+const FILTER_STORAGE_KEY = 'maintenanceTicketFilters';
+
 export default function ViewTickets() {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -28,6 +30,17 @@ export default function ViewTickets() {
   useEffect(() => {
     const init = async () => {
       try {
+        // Restore previous filters if present
+        try {
+          const saved = localStorage.getItem(FILTER_STORAGE_KEY);
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            setFilters(prev => ({ ...prev, ...parsed }));
+          }
+        } catch (e) {
+          // ignore localStorage issues
+        }
+
         const user = await fetchCurrentUser();
         setUserRole(user.role || 'USER');
         if (user.role === 'ADMIN') {
@@ -60,6 +73,13 @@ export default function ViewTickets() {
       
       const data = await fetchTickets(params);
       setTickets(data);
+
+      // Persist filters for next visit
+      try {
+        localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(currentFilters));
+      } catch (e) {
+        // ignore storage errors
+      }
     } catch (err) {
       showNotification('Failed to fetch tickets', 'error');
     } finally {
@@ -81,6 +101,11 @@ export default function ViewTickets() {
     const emptyFilters = { search: '', status: '', priority: '', category: '', resource: '', technicianId: '', startDate: '', endDate: '' };
     setFilters(emptyFilters);
     loadTickets(emptyFilters);
+    try {
+      localStorage.removeItem(FILTER_STORAGE_KEY);
+    } catch (e) {
+      // ignore
+    }
   };
 
   const getStatusColor = (status) => {
@@ -89,6 +114,7 @@ export default function ViewTickets() {
       case 'in progress': return 'var(--status-progress, #f59e0b)';
       case 'resolved': return 'var(--status-resolved, #10b981)';
       case 'closed': return 'var(--status-closed, #6b7280)';
+      case 'rejected': return 'var(--status-rejected, #ef4444)';
       default: return '#6b7280';
     }
   };
@@ -125,6 +151,7 @@ export default function ViewTickets() {
               <option value="In Progress">In Progress</option>
               <option value="Resolved">Resolved</option>
               <option value="Closed">Closed</option>
+              {userRole === 'ADMIN' && <option value="Rejected">Rejected</option>}
             </select>
           </div>
           <div className="filter-group">
@@ -163,15 +190,17 @@ export default function ViewTickets() {
               <input type="text" name="resource" placeholder="Resource or location" value={filters.resource} onChange={handleFilterChange} />
             </div>
           </div>
-          <div className="filter-group">
-            <label>Technician</label>
-            <select name="technicianId" value={filters.technicianId} onChange={handleFilterChange}>
-              <option value="">All</option>
-              {technicians.map((tech) => (
-                <option key={tech.id} value={tech.id}>{tech.name || tech.email}</option>
-              ))}
-            </select>
-          </div>
+          {userRole === 'ADMIN' && (
+            <div className="filter-group">
+              <label>Technician</label>
+              <select name="technicianId" value={filters.technicianId} onChange={handleFilterChange}>
+                <option value="">All</option>
+                {technicians.map((tech) => (
+                  <option key={tech.id} value={tech.id}>{tech.name || tech.email}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="filter-group">
             <label>Date From</label>
             <input type="date" name="startDate" value={filters.startDate} onChange={handleFilterChange} />
