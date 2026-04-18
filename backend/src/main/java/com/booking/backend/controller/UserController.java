@@ -29,18 +29,13 @@ public class UserController {
     }
 
     /**
-     * PUT /api/admin/users/{id}/role
-     * Updates the role of a specific user. Accessible by ADMIN only.
-     * Request body: { "role": "ADMIN" | "USER" }
+     * GET /api/admin/technicians
+     * Returns all users with TECHNICIAN role. Accessible by ADMIN only.
      */
-    @PutMapping("/users/{id}/role")
+    @GetMapping("/technicians")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<User> updateUserRole(
-            @PathVariable Long id,
-            @RequestBody Map<String, String> body) {
-
-        Role role = Role.valueOf(body.get("role").toUpperCase());
-        User updated = userService.updateRole(id, role);
-        return ResponseEntity.ok(updated);
+    public List<User> getAllTechnicians() {
+        return userService.getAllUsers().stream()
+                .filter(user -> user.getRole() == Role.TECHNICIAN)
+                .toList();
     }
-}

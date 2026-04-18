@@ -85,23 +85,21 @@ public class TicketController {
                         .body(java.util.Map.of("message", "Ticket not found or access denied.")));
     }
 
-    @PutMapping("/{id}/status")
-    public ResponseEntity<?> updateTicketStatus(
+    @PutMapping("/{id}/assign")
+    public ResponseEntity<?> assignTechnician(
             @AuthenticationPrincipal OAuth2User principal,
             @PathVariable Long id,
-            @RequestBody java.util.Map<String, String> payload) {
+            @RequestBody java.util.Map<String, Long> payload) {
 
         String email = null;
         if (principal != null) {
             email = principal.getAttribute("email");
         }
 
-        String status = payload.get("status");
-        String rejectionReason = payload.get("rejectionReason");
+        Long technicianId = payload.get("technicianId");
 
-        return ticketService.updateTicketStatus(email, id, status, rejectionReason)
+        return ticketService.assignTechnician(email, id, technicianId)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(java.util.Map.of("message", "Unable to update ticket status. You may not be authorized or the status transition is invalid.")));
+                        .body(java.util.Map.of("message", "Unable to assign technician. You may not be authorized or the technician is invalid.")));
     }
-}

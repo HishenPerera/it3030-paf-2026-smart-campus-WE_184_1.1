@@ -238,4 +238,31 @@ public class TicketService {
             default -> normalizedStatus;
         };
     }
+
+    public Optional<Ticket> assignTechnician(String email, Long ticketId, Long technicianId) {
+        User requestUser = null;
+        if (email != null) {
+            requestUser = userRepository.findByEmail(email).orElse(null);
+        }
+        if (requestUser == null || requestUser.getRole() != com.booking.backend.model.Role.ADMIN) {
+            return Optional.empty();
+        }
+
+        Optional<Ticket> optionalTicket = ticketRepository.findById(ticketId);
+        if (optionalTicket.isEmpty()) {
+            return Optional.empty();
+        }
+
+        User technician = null;
+        if (technicianId != null) {
+            technician = userRepository.findById(technicianId).orElse(null);
+            if (technician == null || technician.getRole() != com.booking.backend.model.Role.TECHNICIAN) {
+                return Optional.empty();
+            }
+        }
+
+        Ticket ticket = optionalTicket.get();
+        ticket.setAssignedTechnician(technician);
+        return Optional.of(ticketRepository.save(ticket));
+    }
 }

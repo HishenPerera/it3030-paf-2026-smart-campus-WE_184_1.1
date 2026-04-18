@@ -168,6 +168,45 @@
   cursor: not-allowed;
 }
 
+.technician-assignment-panel {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.technician-assignment-panel h4 {
+  margin: 0 0 1rem;
+}
+
+.technician-assignment-panel .form-row {
+  margin-bottom: 1rem;
+}
+
+.technician-assignment-panel select {
+  width: 100%;
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm);
+  padding: 0.85rem;
+  background: rgba(255,255,255,0.05);
+  color: var(--text-primary);
+}
+
+.technician-assignment-panel button {
+  padding: 0.85rem 1.2rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--primary-color);
+  color: #fff;
+  cursor: pointer;
+}
+
+.technician-assignment-panel button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .loader-container {
   padding: 4rem;
   display: flex;

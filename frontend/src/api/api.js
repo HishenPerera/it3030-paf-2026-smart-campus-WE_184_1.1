@@ -13,6 +13,7 @@ const api = axios.create({
 // ── User ─────────────────────────────────────────────────
 export const fetchCurrentUser = () => api.get('/api/user/me').then(r => r.data);
 export const fetchAllUsers = () => api.get('/api/admin/users').then(r => r.data);
+export const fetchTechnicians = () => api.get('/api/admin/technicians').then(r => r.data);
 export const updateUserRole = (id, role) => api.put(`/api/admin/users/${id}/role`, { role }).then(r => r.data);
 
 // ── Notifications ────────────────────────────────────────
@@ -33,6 +34,7 @@ export const deleteNotificationBatch = (batchId) => api.delete(`/api/notificatio
 export const fetchTickets = (params) => api.get('/api/tickets', { params }).then(r => r.data);
 export const fetchTicketById = (id) => api.get(`/api/tickets/${id}`).then(r => r.data);
 export const updateTicketStatus = (ticketId, payload) => api.put(`/api/tickets/${ticketId}/status`, payload).then(r => r.data);
+export const assignTechnician = (ticketId, technicianId) => api.put(`/api/tickets/${ticketId}/assign`, { technicianId }).then(r => r.data);
 export const createTicket = (formData) => api.post('/api/tickets', formData, {
   headers: {
     'Content-Type': 'multipart/form-data'

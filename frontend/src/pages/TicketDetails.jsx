@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { fetchTicketById, fetchCurrentUser, updateTicketStatus } from '../api/api';
+import { fetchTicketById, fetchCurrentUser, updateTicketStatus, fetchTechnicians, assignTechnician } from '../api/api';
 import { useNotifications } from '../context/NotificationContext';
 import { ArrowLeft, Image as ImageIcon } from 'lucide-react';
 import './TicketDetails.css';
@@ -21,6 +21,9 @@ export default function TicketDetails() {
   const [selectedStatus, setSelectedStatus] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
   const [updating, setUpdating] = useState(false);
+  const [technicians, setTechnicians] = useState([]);
+  const [selectedTechnician, setSelectedTechnician] = useState('');
+  const [assigning, setAssigning] = useState(false);
   const navigate = useNavigate();
   const { showNotification } = useNotifications();
 
@@ -34,6 +37,11 @@ export default function TicketDetails() {
         ]);
         setTicket(ticketData);
         setUserRole(currentUser.role || 'USER');
+
+        if (currentUser.role === 'ADMIN') {
+          const techs = await fetchTechnicians();
+          setTechnicians(techs);
+        }
       } catch (err) {
         showNotification('Unable to load ticket details.', 'error');
       } finally {
@@ -84,6 +92,22 @@ export default function TicketDetails() {
       showNotification('Failed to update ticket status.', 'error');
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const submitTechnicianAssignment = async () => {
+    const technicianId = selectedTechnician ? parseInt(selectedTechnician) : null;
+
+    setAssigning(true);
+    try {
+      const updated = await assignTechnician(id, technicianId);
+      setTicket(updated);
+      setSelectedTechnician('');
+      showNotification('Technician assigned successfully.', 'success');
+    } catch (err) {
+      showNotification('Failed to assign technician.', 'error');
+    } finally {
+      setAssigning(false);
     }
   };
 
@@ -178,32 +202,20 @@ export default function TicketDetails() {
             </div>
           )}
 
-          {canUpdateStatus() && (
-            <div className="status-update-panel">
-              <h4>Update Ticket Status</h4>
+          {userRole === 'ADMIN' && (
+            <div className="technician-assignment-panel">
+              <h4>Assign Technician</h4>
               <div className="form-row">
-                <select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)}>
-                  <option value="">Select status</option>
-                  {availableStatusOptions().map(statusOption => (
-                    <option key={statusOption} value={statusOption}>{statusOption}</option>
+                <select value={selectedTechnician} onChange={(e) => setSelectedTechnician(e.target.value)}>
+                  <option value="">Select technician</option>
+                  <option value="">Unassign</option>
+                  {technicians.map(tech => (
+                    <option key={tech.id} value={tech.id}>{tech.name || tech.email}</option>
                   ))}
                 </select>
               </div>
-
-              {selectedStatus === 'Rejected' && (
-                <div className="form-row">
-                  <label>Rejection Reason</label>
-                  <textarea
-                    value={rejectionReason}
-                    onChange={(e) => setRejectionReason(e.target.value)}
-                    rows={4}
-                    placeholder="Enter rejection reason"
-                  />
-                </div>
-              )}
-
-              <button className="btn-primary" onClick={submitStatusUpdate} disabled={updating || !selectedStatus}>
-                {updating ? 'Updating…' : 'Update Status'}
+              <button className="btn-primary" onClick={submitTechnicianAssignment} disabled={assigning}>
+                {assigning ? 'Assigning…' : 'Assign Technician'}
               </button>
             </div>
           )}
