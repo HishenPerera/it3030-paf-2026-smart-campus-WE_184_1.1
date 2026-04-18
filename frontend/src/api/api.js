@@ -13,7 +13,9 @@ const api = axios.create({
 // ── User ─────────────────────────────────────────────────
 export const fetchCurrentUser = () => api.get('/api/user/me').then(r => r.data);
 export const fetchAllUsers = () => api.get('/api/admin/users').then(r => r.data);
+export const fetchTechnicians = () => api.get('/api/admin/technicians').then(r => r.data);
 export const updateUserRole = (id, role) => api.put(`/api/admin/users/${id}/role`, { role }).then(r => r.data);
+export const fetchDashboardStats = () => api.get('/api/tickets/statistics').then(r => r.data);
 
 // ── Notifications ────────────────────────────────────────
 export const fetchNotifications = () => api.get('/api/notifications').then(r => r.data);
@@ -29,6 +31,24 @@ export const deleteNotificationBatch = (batchId) => api.delete(`/api/notificatio
 // export const createBooking = (seatId, eventDate) =>
 //   api.post('/api/bookings', { seatId, eventDate }).then(r => r.data);
 // export const cancelBooking = (id) => api.delete(`/api/bookings/${id}`).then(r => r.data);
+
+// ── Tickets ──────────────────────────────────────────────
+export const fetchTickets = (params) => api.get('/api/tickets', { params }).then(r => r.data);
+export const fetchTicketById = (id) => api.get(`/api/tickets/${id}`).then(r => r.data);
+export const updateTicketStatus = (ticketId, payload) => api.put(`/api/tickets/${ticketId}/status`, payload).then(r => r.data);
+export const assignTechnician = (ticketId, technicianId) => api.put(`/api/tickets/${ticketId}/assign`, { technicianId }).then(r => r.data);
+export const deleteTicketAttachment = (ticketId, imageUrl) => api.delete(`/api/tickets/${ticketId}/attachments`, { params: { imageUrl } }).then(r => r.data);
+export const createTicket = (formData) => api.post('/api/tickets', formData, {
+  headers: {
+    'Content-Type': 'multipart/form-data'
+  }
+}).then(r => r.data);
+
+// ── Comments ──────────────────────────────────────────────
+export const fetchComments = (ticketId) => api.get(`/api/tickets/${ticketId}/comments`).then(r => r.data);
+export const addComment = (ticketId, content) => api.post(`/api/tickets/${ticketId}/comments`, { content }).then(r => r.data);
+export const updateComment = (ticketId, commentId, content) => api.put(`/api/tickets/${ticketId}/comments/${commentId}`, { content }).then(r => r.data);
+export const deleteComment = (ticketId, commentId) => api.delete(`/api/tickets/${ticketId}/comments/${commentId}`).then(r => r.data);
 
 // ── Auth ─────────────────────────────────────────────────
 export const loginWithGoogle = () => {

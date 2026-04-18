@@ -913,6 +913,73 @@
   margin-right: 20px;
 }
 
+.admin-ticket-filters-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.ticket-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.22rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 650;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.ticket-status-open {
+  border-color: rgba(59, 130, 246, 0.4);
+  background: rgba(59, 130, 246, 0.15);
+  color: #93c5fd;
+}
+.ticket-status-in-progress {
+  border-color: rgba(245, 158, 11, 0.45);
+  background: rgba(245, 158, 11, 0.14);
+  color: #fcd34d;
+}
+.ticket-status-resolved {
+  border-color: rgba(16, 185, 129, 0.4);
+  background: rgba(16, 185, 129, 0.14);
+  color: #6ee7b7;
+}
+.ticket-status-closed {
+  border-color: rgba(148, 163, 184, 0.35);
+  background: rgba(148, 163, 184, 0.12);
+  color: #e2e8f0;
+}
+.ticket-status-rejected {
+  border-color: rgba(239, 68, 68, 0.45);
+  background: rgba(239, 68, 68, 0.12);
+  color: #fca5a5;
+}
+
+.ticket-priority-low {
+  border-color: rgba(16, 185, 129, 0.35);
+  background: rgba(16, 185, 129, 0.12);
+  color: #6ee7b7;
+}
+.ticket-priority-medium {
+  border-color: rgba(59, 130, 246, 0.35);
+  background: rgba(59, 130, 246, 0.12);
+  color: #93c5fd;
+}
+.ticket-priority-high {
+  border-color: rgba(245, 158, 11, 0.4);
+  background: rgba(245, 158, 11, 0.12);
+  color: #fcd34d;
+}
+.ticket-priority-critical {
+  border-color: rgba(239, 68, 68, 0.45);
+  background: rgba(239, 68, 68, 0.12);
+  color: #fca5a5;
+}
+
 .delete-batch-btn {
   background: rgba(239, 68, 68, 0.2);
   color: #ef4444;

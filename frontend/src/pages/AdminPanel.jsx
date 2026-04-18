@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchAllUsers, updateUserRole, fetchCurrentUser, sendNotification, fetchNotificationBatches, deleteNotificationBatch } from '../api/api';
+import { fetchAllUsers, updateUserRole, fetchCurrentUser, sendNotification, fetchNotificationBatches, deleteNotificationBatch, fetchTickets, fetchTechnicians } from '../api/api';
 import NotificationBell from '../components/NotificationBell';
 import './AdminPanel.css';
 
 const NAV_ITEMS = [
   { id: 'overview', icon: 'bi-bar-chart-fill', label: 'Overview' },
+  { id: 'tickets', icon: 'bi-wrench-adjustable-circle-fill', label: 'Ticket Management' },
   { id: 'users', icon: 'bi-people-fill', label: 'User Management' },
   { id: 'notifications', icon: 'bi-bell-fill', label: 'Send Notifications' },
 ];
@@ -13,7 +14,7 @@ const NAV_ITEMS = [
 const PAGE_SIZE_OPTIONS = [5, 10, 20, 50];
 
 export default function AdminPanel() {
-  const [activeNav, setActiveNav] = useState('users');
+  const [activeNav, setActiveNav] = useState('tickets');
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState({});
@@ -39,6 +40,21 @@ export default function AdminPanel() {
   
   const [batches, setBatches] = useState([]);
 
+  // Ticket management state
+  const [tickets, setTickets] = useState([]);
+  const [ticketsLoading, setTicketsLoading] = useState(false);
+  const [technicians, setTechnicians] = useState([]);
+  const [ticketFilters, setTicketFilters] = useState({
+    search: '',
+    status: '',
+    priority: '',
+    category: '',
+    resource: '',
+    technicianId: '',
+    startDate: '',
+    endDate: ''
+  });
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -53,6 +69,13 @@ export default function AdminPanel() {
         allUsers.forEach(u => { initial[u.id] = u.role; });
         setRoleChanges(initial);
         
+        try {
+          const techList = await fetchTechnicians();
+          setTechnicians(techList);
+        } catch {
+          // ignore technician list failures
+        }
+
         const activeBatches = await fetchNotificationBatches();
         setBatches(activeBatches);
       } catch (err) {
@@ -67,6 +90,58 @@ export default function AdminPanel() {
     };
     init();
   }, [navigate]);
+
+  useEffect(() => {
+    if (activeNav !== 'tickets') return;
+    const load = async () => {
+      setTicketsLoading(true);
+      try {
+        const params = {};
+        Object.keys(ticketFilters).forEach(k => {
+          if (ticketFilters[k]) params[k] = ticketFilters[k];
+        });
+        const data = await fetchTickets(params);
+        setTickets(Array.isArray(data) ? data : []);
+      } catch {
+        setError('Failed to load tickets.');
+      } finally {
+        setTicketsLoading(false);
+      }
+    };
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeNav]);
+
+  const applyTicketFilters = async (e) => {
+    e.preventDefault();
+    setTicketsLoading(true);
+    try {
+      const params = {};
+      Object.keys(ticketFilters).forEach(k => {
+        if (ticketFilters[k]) params[k] = ticketFilters[k];
+      });
+      const data = await fetchTickets(params);
+      setTickets(Array.isArray(data) ? data : []);
+    } catch {
+      setError('Failed to load tickets.');
+    } finally {
+      setTicketsLoading(false);
+    }
+  };
+
+  const clearTicketFilters = async () => {
+    const empty = { search: '', status: '', priority: '', category: '', resource: '', technicianId: '', startDate: '', endDate: '' };
+    setTicketFilters(empty);
+    setTicketsLoading(true);
+    try {
+      const data = await fetchTickets({});
+      setTickets(Array.isArray(data) ? data : []);
+    } catch {
+      setError('Failed to load tickets.');
+    } finally {
+      setTicketsLoading(false);
+    }
+  };
 
   const handleRoleChange = (userId, newRole) =>
     setRoleChanges(prev => ({ ...prev, [userId]: newRole }));
@@ -88,7 +163,7 @@ export default function AdminPanel() {
     try {
       await deleteNotificationBatch(batchId);
       setBatches(prev => prev.filter(b => b.batchId !== batchId));
-    } catch (err) {
+    } catch {
       alert("Failed to delete broadcast");
     }
   };
@@ -271,6 +346,144 @@ export default function AdminPanel() {
                   <span className="stat-label">Active Accounts</span>
                 </div>
               </div>
+            </div>
+          </section>
+        )}
+
+        {/* ── TICKETS TAB ── */}
+        {activeNav === 'tickets' && (
+          <section className="content-section animate-fade-in">
+            <div className="section-heading">
+              <h1>Ticket Management</h1>
+              <p>Review, filter, and manage all maintenance & incident tickets.</p>
+            </div>
+
+            <div className="table-controls glass-panel">
+              <div className="controls-left">
+                <div className="search-box">
+                  <i className="bi bi-search search-icon"></i>
+                  <input
+                    type="text"
+                    placeholder="Search by ID, resource, category, or description…"
+                    value={ticketFilters.search}
+                    onChange={e => setTicketFilters(prev => ({ ...prev, search: e.target.value }))}
+                    className="search-input"
+                  />
+                  {ticketFilters.search && (
+                    <button className="search-clear" onClick={() => setTicketFilters(prev => ({ ...prev, search: '' }))}>
+                      <i className="bi bi-x"></i>
+                    </button>
+                  )}
+                </div>
+
+                <div className="filter-group">
+                  {['', 'Open', 'In Progress', 'Resolved', 'Closed', 'Rejected'].map(s => (
+                    <button
+                      key={s || 'ALL'}
+                      className={`filter-chip ${ticketFilters.status === s ? 'active' : ''}`}
+                      onClick={() => setTicketFilters(prev => ({ ...prev, status: s }))}
+                    >
+                      {s || 'All Status'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="controls-right">
+                <form onSubmit={applyTicketFilters} className="admin-ticket-filters-inline">
+                  <select
+                    className="role-select"
+                    value={ticketFilters.priority}
+                    onChange={e => setTicketFilters(prev => ({ ...prev, priority: e.target.value }))}
+                    title="Priority"
+                  >
+                    <option value="">All Priorities</option>
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                    <option value="Critical">Critical</option>
+                  </select>
+
+                  <select
+                    className="role-select"
+                    value={ticketFilters.technicianId}
+                    onChange={e => setTicketFilters(prev => ({ ...prev, technicianId: e.target.value }))}
+                    title="Assigned Technician"
+                  >
+                    <option value="">All Technicians</option>
+                    {technicians.map(t => (
+                      <option key={t.id} value={t.id}>{t.name || t.email}</option>
+                    ))}
+                  </select>
+
+                  <button className="save-btn save-btn-active" type="submit" disabled={ticketsLoading}>
+                    {ticketsLoading ? 'Loading…' : 'Apply'}
+                  </button>
+                  <button className="save-btn" type="button" onClick={clearTicketFilters} disabled={ticketsLoading}>
+                    Clear
+                  </button>
+                </form>
+              </div>
+            </div>
+
+            <div className="user-table-wrapper glass-panel">
+              <table className="user-table">
+                <thead>
+                  <tr>
+                    <th>Ticket</th>
+                    <th>Status</th>
+                    <th>Priority</th>
+                    <th>Resource / Location</th>
+                    <th>Category</th>
+                    <th>Reporter</th>
+                    <th>Technician</th>
+                    <th>Created</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ticketsLoading ? (
+                    <tr>
+                      <td colSpan={9} className="empty-state">
+                        <div className="loader" />
+                      </td>
+                    </tr>
+                  ) : tickets.length === 0 ? (
+                    <tr>
+                      <td colSpan={9} className="empty-state">
+                        <i className="bi bi-inbox"></i>
+                        <p>No tickets match the selected filters.</p>
+                      </td>
+                    </tr>
+                  ) : (
+                    tickets.map(t => (
+                      <tr key={t.id}>
+                        <td><b>#{t.id}</b></td>
+                        <td>
+                          <span className={`ticket-badge ticket-status-${(t.status || '').toLowerCase().replaceAll(' ', '-')}`}>
+                            {t.status}
+                          </span>
+                        </td>
+                        <td>
+                          <span className={`ticket-badge ticket-priority-${(t.priority || '').toLowerCase()}`}>
+                            {t.priority}
+                          </span>
+                        </td>
+                        <td>{t.resourceOrLocation}</td>
+                        <td>{t.category}</td>
+                        <td>{t.user?.name || t.user?.email || '—'}</td>
+                        <td>{t.assignedTechnician?.name || t.assignedTechnician?.email || 'Unassigned'}</td>
+                        <td className="email-cell">{t.createdAt ? new Date(t.createdAt).toLocaleString() : '—'}</td>
+                        <td>
+                          <button className="save-btn save-btn-active" onClick={() => navigate(`/tickets/${t.id}`)}>
+                            View
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
           </section>
         )}
@@ -494,7 +707,7 @@ export default function AdminPanel() {
                   // Refresh history
                   const bList = await fetchNotificationBatches();
                   setBatches(bList);
-                } catch (err) {
+                } catch {
                   setNotifStatus({ error: true, message: 'Failed to send notification.' });
                 }
               }} className="notification-form">

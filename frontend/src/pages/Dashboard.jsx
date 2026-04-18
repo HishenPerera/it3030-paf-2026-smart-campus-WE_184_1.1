@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchCurrentUser, logout } from '../api/api';
+import { fetchCurrentUser, fetchDashboardStats, logout } from '../api/api';
 import NotificationBell from '../components/NotificationBell';
+import useNotifications from '../context/useNotifications';
 import './Dashboard.css';
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { normalNotifications } = useNotifications();
 
   const handleLogout = async () => {
     try {
@@ -39,6 +42,18 @@ export default function Dashboard() {
     fetchUser();
   }, [navigate]);
 
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const data = await fetchDashboardStats();
+        setStats(data);
+      } catch {
+        // Don't block dashboard on stats failures
+      }
+    };
+    loadStats();
+  }, []);
+
   if (loading) {
     return (
       <div className="dashboard-container min-h-screen flex-center">
@@ -50,6 +65,26 @@ export default function Dashboard() {
   if (!user) {
     return null; // Will redirect
   }
+
+  const role = user.role || 'USER';
+  const quickActions = [
+    ...(role === 'ADMIN'
+      ? [{ id: 'admin-tickets', label: 'Ticket Management', hint: 'Manage all tickets', enabled: true, onClick: () => navigate('/admin') }]
+      : []),
+    ...(role === 'TECHNICIAN'
+      ? [{ id: 'assigned-tickets', label: 'Assigned Tickets', hint: 'View tickets assigned to you', enabled: true, onClick: () => navigate('/tickets') }]
+      : []),
+    ...(role === 'USER'
+      ? [
+          { id: 'report-incident', label: 'Report Incident', hint: 'Create a maintenance ticket', enabled: true, onClick: () => navigate('/create-ticket') },
+          { id: 'my-tickets', label: 'View My Tickets', hint: 'Track ticket status', enabled: true, onClick: () => navigate('/tickets') },
+        ]
+      : []),
+    { id: 'create-booking', label: 'Create Booking', hint: 'Coming soon', enabled: false, onClick: () => {} },
+    { id: 'view-resources', label: 'View Resources', hint: 'Coming soon', enabled: false, onClick: () => {} },
+  ];
+
+  const recentNotifications = (normalNotifications || []).slice(0, 5);
 
   return (
     <div className="dashboard-container min-h-screen animate-fade-in">

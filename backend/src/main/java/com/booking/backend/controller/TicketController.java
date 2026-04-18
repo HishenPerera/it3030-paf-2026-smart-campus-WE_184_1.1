@@ -1,0 +1,163 @@
+package com.booking.backend.controller;
+
+import com.booking.backend.model.Ticket;
+import com.booking.backend.model.TicketResponse;
+import com.booking.backend.model.TicketStatistics;
+import com.booking.backend.service.TicketService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/tickets")
+@RequiredArgsConstructor
+public class TicketController {
+
+    private final TicketService ticketService;
+
+    @PostMapping
+    public ResponseEntity<?> createTicket(
+            @AuthenticationPrincipal OAuth2User principal,
+            @RequestParam("resourceOrLocation") String resourceOrLocation,
+            @RequestParam("category") String category,
+            @RequestParam("description") String description,
+            @RequestParam("priority") String priority,
+            @RequestParam("contactDetails") String contactDetails,
+            @RequestParam(value = "files", required = false) List<MultipartFile> files) {
+        
+        try {
+            String email = null;
+            if (principal != null) {
+                email = principal.getAttribute("email");
+            }
+
+            Ticket ticket = ticketService.createTicket(
+                    email, resourceOrLocation, category, description, priority, contactDetails, files);
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(TicketResponse.from(ticket));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Error submitting ticket: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping
+    public ResponseEntity<List<TicketResponse>> getTickets(
+            @AuthenticationPrincipal OAuth2User principal,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String priority,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String resource,
+            @RequestParam(required = false) Long assignedTechnicianId,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
+            
+        String email = null;
+        if (principal != null) {
+            email = principal.getAttribute("email");
+        }
+        
+        List<Ticket> tickets = ticketService.getTicketsFiltered(
+                email, status, priority, category, resource, assignedTechnicianId, search, startDate, endDate);
+
+        List<TicketResponse> responses = tickets.stream()
+                .map(TicketResponse::from)
+                .toList();
+
+        return ResponseEntity.ok(responses);
+    }
+
+    @GetMapping("/statistics")
+    public ResponseEntity<TicketStatistics> getTicketStatistics(
+            @AuthenticationPrincipal OAuth2User principal) {
+        String email = null;
+        if (principal != null) {
+            email = principal.getAttribute("email");
+        }
+
+        TicketStatistics stats = ticketService.getTicketStatistics(email);
+        return ResponseEntity.ok(stats);
+    }
+
+    @DeleteMapping("/{id}/attachments")
+    public ResponseEntity<?> deleteTicketAttachment(
+            @AuthenticationPrincipal OAuth2User principal,
+            @PathVariable Long id,
+            @RequestParam String imageUrl) {
+
+        String email = null;
+        if (principal != null) {
+            email = principal.getAttribute("email");
+        }
+
+        return ticketService.removeTicketAttachment(email, id, imageUrl)
+                .<ResponseEntity<?>>map(updatedTicket -> ResponseEntity.ok(TicketResponse.from(updatedTicket)))
+                .orElse(ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("message", "Unable to delete attachment. You may not be authorized or the attachment was not found.")));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getTicketById(
+            @AuthenticationPrincipal OAuth2User principal,
+            @PathVariable Long id) {
+
+        String email = null;
+        if (principal != null) {
+            email = principal.getAttribute("email");
+        }
+
+        return ticketService.getTicketById(email, id)
+                .<ResponseEntity<?>>map(ticket -> ResponseEntity.ok(TicketResponse.from(ticket)))
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("message", "Ticket not found or access denied.")));
+    }
+
+    @PutMapping("/{id}/assign")
+    public ResponseEntity<?> assignTechnician(
+            @AuthenticationPrincipal OAuth2User principal,
+            @PathVariable Long id,
+            @RequestBody java.util.Map<String, Long> payload) {
+
+        String email = null;
+        if (principal != null) {
+            email = principal.getAttribute("email");
+        }
+
+        Long technicianId = payload.get("technicianId");
+
+        return ticketService.assignTechnician(email, id, technicianId)
+                .<ResponseEntity<?>>map(updatedTicket -> ResponseEntity.ok(TicketResponse.from(updatedTicket)))
+                .orElse(ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("message", "Unable to assign technician. You may not be authorized or the technician is invalid.")));
+    }
+
+    @PutMapping("/{id}/status")
+    public ResponseEntity<?> updateTicketStatus(
+            @AuthenticationPrincipal OAuth2User principal,
+            @PathVariable Long id,
+            @RequestBody java.util.Map<String, Object> payload) {
+
+        String email = null;
+        if (principal != null) {
+            email = principal.getAttribute("email");
+        }
+
+        String status = (String) payload.get("status");
+        String rejectionReason = (String) payload.get("rejectionReason");
+        String resolutionNotes = (String) payload.get("resolutionNotes");
+
+        return ticketService.updateTicketStatus(email, id, status, rejectionReason, resolutionNotes)
+                .<ResponseEntity<?>>map(updatedTicket -> ResponseEntity.ok(TicketResponse.from(updatedTicket)))
+                .orElse(ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("message", "Unable to update ticket status. You may not be authorized or the status transition is invalid.")));
+    }
+}
