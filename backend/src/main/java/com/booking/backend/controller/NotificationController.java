@@ -53,6 +53,15 @@ public class NotificationController {
         return ResponseEntity.ok().build();
     }
 
+    @PutMapping("/read-all")
+    public ResponseEntity<Void> markAllAsRead(@AuthenticationPrincipal OAuth2User principal) {
+        if (principal == null) return ResponseEntity.status(401).build();
+        String email = principal.getAttribute("email");
+        User user = getCurrentUser(email);
+        notificationService.markAllNormalAsRead(user);
+        return ResponseEntity.ok().build();
+    }
+
     @PostMapping("/send")
     public ResponseEntity<Void> sendNotification(@RequestBody SendNotificationRequest request, @AuthenticationPrincipal OAuth2User principal) {
         if (principal == null) return ResponseEntity.status(401).build();

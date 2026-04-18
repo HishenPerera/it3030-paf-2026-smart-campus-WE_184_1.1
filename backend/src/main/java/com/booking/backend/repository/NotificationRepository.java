@@ -2,10 +2,12 @@ package com.booking.backend.repository;
 
 import com.booking.backend.model.Notification;
 import com.booking.backend.model.NotificationBatchSummary;
+import com.booking.backend.model.NotificationType;
 import com.booking.backend.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -16,6 +18,16 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     List<Notification> findAllByUserOrderByCreatedAtDesc(User user);
     List<Notification> findAllByUserAndIsReadFalseOrderByCreatedAtDesc(User user);
     long countByUserAndIsReadFalse(User user);
+
+    // clearAutomatically = true flushes the 1st-level JPA cache so a subsequent
+    // findAll sees the updated rows, not the stale cached entities.
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE Notification n SET n.isRead = true WHERE n.user = :user AND n.type = :type")
+    void markAllByUserAndType(@Param("user") User user, @Param("type") NotificationType type);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE Notification n SET n.isRead = true WHERE n.user = :user")
+    void markAllByUser(@Param("user") User user);
 
     @Modifying
     void deleteByBatchId(String batchId);

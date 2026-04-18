@@ -1,48 +1,81 @@
-import React, { createContext, useState, useEffect, useMemo, useCallback } from 'react';
-import { fetchNotifications, markNotificationRead } from '../api/api';
-import ToastContainer from '../components/ToastContainer';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
+import { fetchNotifications, markNotificationRead, markAllNotificationsRead } from '../api/api';
 
 const NotificationContext = createContext();
 
 export const NotificationProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
-  const [toasts, setToasts] = useState([]);
-  
-  const fetchMyNotifications = async () => {
+  const pollingRef = useRef(null);
+
+  const fetchMyNotifications = useCallback(async () => {
     try {
       const data = await fetchNotifications();
       if (Array.isArray(data)) {
         setNotifications(data);
       }
     } catch (err) {
-      console.error("Failed to fetch notifications", err);
+      // User may not be logged in yet — suppress noise
     }
-  };
-
-  useEffect(() => {
-    // Initial fetch (async to satisfy strict hooks lint)
-    const t = setTimeout(fetchMyNotifications, 0);
-
-    // Poll every 10 seconds
-    const interval = setInterval(fetchMyNotifications, 10000);
-    return () => {
-      clearTimeout(t);
-      clearInterval(interval);
-    };
   }, []);
 
+  const startPolling = useCallback(() => {
+    if (pollingRef.current) clearInterval(pollingRef.current);
+    pollingRef.current = setInterval(fetchMyNotifications, 10000);
+  }, [fetchMyNotifications]);
+
+  const stopPolling = useCallback(() => {
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current);
+      pollingRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchMyNotifications();
+    startPolling();
+    return () => stopPolling();
+  }, [fetchMyNotifications, startPolling, stopPolling]);
+
+  // Lombok @Data on Boolean field "isRead" generates isRead() getter
+  // → Jackson strips "is" prefix → serializes JSON key as "read" (not "isRead")
+  // A notification is unread ONLY if neither key is explicitly true.
+  const isUnread = (n) => n.isRead !== true && n.read !== true;
+
+  const alerts = notifications.filter(n => n.type === 'ALERT' && isUnread(n));
+  const normalNotifications = notifications.filter(n => n.type === 'NOTIFICATION');
+  const unreadNormalCount = normalNotifications.filter(isUnread).length;
+
   const markAsRead = async (id) => {
+    // Optimistic update first for instant UI feedback
+    setNotifications(prev =>
+      prev.map(n => n.id === id ? { ...n, isRead: true, read: true } : n)
+    );
     try {
       await markNotificationRead(id);
-      setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
     } catch (err) {
-      console.error("Failed to mark notification as read", err);
+      console.error('Failed to mark notification as read', err);
+      // Rollback optimistic update on failure
+      await fetchMyNotifications();
     }
   };
 
-  const alerts = notifications.filter(n => n.type === 'ALERT' && !n.isRead);
-  const normalNotifications = notifications.filter(n => n.type === 'NOTIFICATION');
-  const unreadNormalCount = normalNotifications.filter(n => !n.isRead).length;
+  const markAllAsRead = async () => {
+    // Optimistic update for instant feedback
+    setNotifications(prev =>
+      prev.map(n => n.type === 'NOTIFICATION' ? { ...n, isRead: true, read: true } : n)
+    );
+    try {
+      stopPolling();
+      await markAllNotificationsRead();
+      // Re-fetch from server to confirm DB write — this is the source of truth
+      await fetchMyNotifications();
+    } catch (err) {
+      console.error('Failed to mark all notifications as read', err);
+      await fetchMyNotifications(); // rollback via fresh fetch
+    } finally {
+      startPolling();
+    }
+  };
 
   const removeToast = (id) => {
     setToasts(prev => prev.filter(t => t.id !== id));
@@ -70,8 +103,15 @@ export const NotificationProvider = ({ children }) => {
   }), [notifications, alerts, normalNotifications, unreadNormalCount, showNotification]);
 
   return (
-    <NotificationContext.Provider value={value}>
-      <ToastContainer toasts={toasts} onClose={removeToast} />
+    <NotificationContext.Provider value={{
+      notifications,
+      alerts,
+      normalNotifications,
+      unreadNormalCount,
+      markAsRead,
+      markAllAsRead,
+      fetchMyNotifications,
+    }}>
       {children}
     </NotificationContext.Provider>
   );

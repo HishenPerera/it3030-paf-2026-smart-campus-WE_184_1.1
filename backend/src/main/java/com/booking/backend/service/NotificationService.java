@@ -105,6 +105,11 @@ public class NotificationService {
         notificationRepository.save(notification);
     }
 
+    @Transactional
+    public void markAllNormalAsRead(User user) {
+        notificationRepository.markAllByUserAndType(user, NotificationType.NOTIFICATION);
+    }
+
     // --- Admin Management ---
     public List<NotificationBatchSummary> getBroadcastBatches() {
         return notificationRepository.findDistinctBatches();

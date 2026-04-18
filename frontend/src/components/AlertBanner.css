@@ -1,12 +1,12 @@
 .alert-banners-container {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
+  top: 80px;
+  right: 20px;
   z-index: 2147483647 !important;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  align-items: flex-end;
+  gap: 10px;
   padding: 10px;
   pointer-events: none;
 }
@@ -21,18 +21,17 @@
   justify-content: space-between;
   box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
   pointer-events: auto;
-  max-width: 800px;
-  margin: 0 auto;
-  width: 100%;
+  max-width: 400px;
+  width: auto;
 }
 
-.slide-down {
-  animation: slideDown 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+.slide-in-right {
+  animation: slideInRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-100%); }
-  to { opacity: 1; transform: translateY(0); }
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(100%); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
 .alert-icon {
