@@ -135,7 +135,7 @@ public class TicketService {
         return Optional.empty();
     }
 
-    public Optional<Ticket> updateTicketStatus(String email, Long ticketId, String newStatus, String rejectionReason) {
+    public Optional<Ticket> updateTicketStatus(String email, Long ticketId, String newStatus, String rejectionReason, String resolutionNotes) {
         User requestUser = null;
         if (email != null) {
             requestUser = userRepository.findByEmail(email).orElse(null);
@@ -186,11 +186,20 @@ public class TicketService {
             return Optional.empty();
         }
 
+        if ("RESOLVED".equals(normalizedNext) && (resolutionNotes == null || resolutionNotes.isBlank())) {
+            return Optional.empty();
+        }
+
         ticket.setStatus(formatStatus(normalizedNext));
         if ("REJECTED".equals(normalizedNext)) {
             ticket.setRejectionReason(rejectionReason);
+            ticket.setResolutionNotes(null);
+        } else if ("RESOLVED".equals(normalizedNext)) {
+            ticket.setResolutionNotes(resolutionNotes);
+            ticket.setRejectionReason(null);
         } else {
             ticket.setRejectionReason(null);
+            ticket.setResolutionNotes(null);
         }
 
         return Optional.of(ticketRepository.save(ticket));

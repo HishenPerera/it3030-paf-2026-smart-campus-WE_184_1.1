@@ -103,3 +103,24 @@ public class TicketController {
                 .orElse(ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(java.util.Map.of("message", "Unable to assign technician. You may not be authorized or the technician is invalid.")));
     }
+
+    @PutMapping("/{id}/status")
+    public ResponseEntity<?> updateTicketStatus(
+            @AuthenticationPrincipal OAuth2User principal,
+            @PathVariable Long id,
+            @RequestBody java.util.Map<String, Object> payload) {
+
+        String email = null;
+        if (principal != null) {
+            email = principal.getAttribute("email");
+        }
+
+        String status = (String) payload.get("status");
+        String rejectionReason = (String) payload.get("rejectionReason");
+        String resolutionNotes = (String) payload.get("resolutionNotes");
+
+        return ticketService.updateTicketStatus(email, id, status, rejectionReason, resolutionNotes)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(java.util.Map.of("message", "Unable to update ticket status. You may not be authorized or the status transition is invalid.")));
+    }

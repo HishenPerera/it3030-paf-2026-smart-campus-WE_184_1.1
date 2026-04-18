@@ -20,6 +20,7 @@ export default function TicketDetails() {
   const [userRole, setUserRole] = useState('USER');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
+  const [resolutionNotes, setResolutionNotes] = useState('');
   const [updating, setUpdating] = useState(false);
   const [technicians, setTechnicians] = useState([]);
   const [selectedTechnician, setSelectedTechnician] = useState('');
@@ -76,17 +77,24 @@ export default function TicketDetails() {
       showNotification('Please enter a rejection reason.', 'error');
       return;
     }
+    if (selectedStatus === 'Resolved' && !resolutionNotes.trim()) {
+      showNotification('Please enter resolution notes.', 'error');
+      return;
+    }
 
     setUpdating(true);
     try {
       const payload = { status: selectedStatus };
       if (selectedStatus === 'Rejected') {
         payload.rejectionReason = rejectionReason;
+      } else if (selectedStatus === 'Resolved') {
+        payload.resolutionNotes = resolutionNotes;
       }
       const updated = await updateTicketStatus(id, payload);
       setTicket(updated);
       setSelectedStatus('');
       setRejectionReason('');
+      setResolutionNotes('');
       showNotification('Ticket status updated successfully.', 'success');
     } catch (err) {
       showNotification('Failed to update ticket status.', 'error');
@@ -199,6 +207,48 @@ export default function TicketDetails() {
                 <span className="label">Rejection Reason</span>
                 <p>{ticket.rejectionReason || 'No rejection reason provided.'}</p>
               </div>
+            </div>
+          )}
+
+          {canUpdateStatus() && (
+            <div className="status-update-panel">
+              <h4>Update Ticket Status</h4>
+              <div className="form-row">
+                <select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)}>
+                  <option value="">Select status</option>
+                  {availableStatusOptions().map(statusOption => (
+                    <option key={statusOption} value={statusOption}>{statusOption}</option>
+                  ))}
+                </select>
+              </div>
+
+              {selectedStatus === 'Rejected' && (
+                <div className="form-row">
+                  <label>Rejection Reason</label>
+                  <textarea
+                    value={rejectionReason}
+                    onChange={(e) => setRejectionReason(e.target.value)}
+                    rows={4}
+                    placeholder="Enter rejection reason"
+                  />
+                </div>
+              )}
+
+              {selectedStatus === 'Resolved' && (
+                <div className="form-row">
+                  <label>Resolution Notes</label>
+                  <textarea
+                    value={resolutionNotes}
+                    onChange={(e) => setResolutionNotes(e.target.value)}
+                    rows={4}
+                    placeholder="Enter resolution notes (e.g., 'Projector bulb replaced' or 'Network cable repaired')"
+                  />
+                </div>
+              )}
+
+              <button className="btn-primary" onClick={submitStatusUpdate} disabled={updating || !selectedStatus}>
+                {updating ? 'Updating…' : 'Update Status'}
+              </button>
             </div>
           )}
 
