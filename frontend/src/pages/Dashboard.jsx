@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchCurrentUser, logout } from '../api/api';
+import { Sofa } from 'lucide-react';
 import NotificationBell from '../components/NotificationBell';
 import './Dashboard.css';
 
@@ -15,20 +16,17 @@ export default function Dashboard() {
     } catch (err) {
       console.error('Logout failed', err);
     } finally {
-      // Regardless of failure, force the frontend to clear and return to login
       setUser(null);
       navigate('/login');
     }
   };
 
   useEffect(() => {
-    // Fetch user details from the backend endpoint
     const fetchUser = async () => {
       try {
         const data = await fetchCurrentUser();
         setUser(data);
       } catch (err) {
-        // 401 Unauthorized or network error → redirect to login
         console.error('Not authenticated:', err.response?.status);
         navigate('/login');
       } finally {
@@ -48,7 +46,7 @@ export default function Dashboard() {
   }
 
   if (!user) {
-    return null; // Will redirect
+    return null;
   }
 
   return (
@@ -59,15 +57,23 @@ export default function Dashboard() {
         </div>
         <div className="header-profile">
           <NotificationBell />
-          <img src={user.picture || user.avatar_url || `https://ui-avatars.com/api/?name=${user.name}&background=random`} alt="Avatar" className="avatar" />
+          <img
+            src={user.picture || user.avatar_url || `https://ui-avatars.com/api/?name=${user.name}&background=random`}
+            alt="Avatar"
+            className="avatar"
+          />
           <div className="profile-info">
             <span className="profile-name">{user.name || user.login}</span>
             <span className="profile-email">{user.email}</span>
           </div>
           {user.role === 'ADMIN' && (
-            <button className="admin-btn" onClick={() => navigate('/admin')}>Admin Panel</button>
+            <button className="admin-btn" onClick={() => navigate('/admin')}>
+              Admin Panel
+            </button>
           )}
-          <button className="logout-btn" onClick={handleLogout}>Logout</button>
+          <button className="logout-btn" onClick={handleLogout}>
+            Logout
+          </button>
         </div>
       </header>
 
@@ -75,13 +81,28 @@ export default function Dashboard() {
         <div className="welcome-card glass-panel">
           <h1>Welcome back, {user.given_name || user.name || user.login}!</h1>
           <p>You have successfully authenticated via OAuth2 through Spring Boot.</p>
-          
+
           <div className="raw-data-section">
             <h3>Your OAuth Profile Context:</h3>
             <pre className="code-block">
               {JSON.stringify(user, null, 2)}
             </pre>
           </div>
+        </div>
+
+        <div
+          className="dashboard-quick-actions"
+          style={{ marginTop: '2.5rem', display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}
+        >
+          <button className="dashboard-action-card" onClick={() => navigate('/resources')}>
+            <div className="action-icon-wrapper">
+              <Sofa size={28} strokeWidth={2} />
+            </div>
+            <div className="action-text">
+              <h4>Register New Seat</h4>
+              <p>Manage library seating & spaces</p>
+            </div>
+          </button>
         </div>
       </main>
     </div>

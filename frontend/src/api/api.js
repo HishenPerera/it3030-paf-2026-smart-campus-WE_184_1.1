@@ -5,6 +5,13 @@ const api = axios.create({
   withCredentials: true,
 });
 
+// ── Facilities & Assets Catalogue ────────────────
+export const fetchResources = () => api.get('/api/resources').then(r => r.data);
+export const addResource = (resourceData) => api.post('/api/resources', resourceData).then(r => r.data);
+export const updateResource = (id, resourceData) => api.put(`/api/resources/${id}`, resourceData).then(r => r.data);
+export const deleteResource = (id) => api.delete(`/api/resources/${id}`).then(r => r.data);
+
+
 // // ── Halls ────────────────────────────────────────────────
 // export const fetchHalls = () => api.get('/api/halls').then(r => r.data);
 // export const fetchHall = (id) => api.get(`/api/halls/${id}`).then(r => r.data);
@@ -36,3 +43,4 @@ export const loginWithGoogle = () => {
 export const logout = () => api.post('/api/logout').then(r => r.data);
 
 export default api;
+
