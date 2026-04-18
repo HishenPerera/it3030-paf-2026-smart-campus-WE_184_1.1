@@ -1,6 +1,8 @@
 package com.booking.backend.service;
 
 import com.booking.backend.model.Comment;
+import com.booking.backend.model.NotificationType;
+import com.booking.backend.model.Role;
 import com.booking.backend.model.Ticket;
 import com.booking.backend.model.User;
 import com.booking.backend.repository.CommentRepository;
@@ -20,6 +22,7 @@ public class CommentService {
     private final CommentRepository commentRepository;
     private final TicketRepository ticketRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     @Transactional
     public Optional<Comment> addComment(String email, Long ticketId, String content) {
@@ -61,7 +64,35 @@ public class CommentService {
                 .ticket(ticket)
                 .build();
 
-        return Optional.of(commentRepository.save(comment));
+        Comment saved = commentRepository.save(comment);
+
+        // Notify relevant parties about the new comment (avoid notifying the author)
+        if (ticket.getUser() != null && !ticket.getUser().getId().equals(author.getId())) {
+            notificationService.sendToUser(
+                    ticket.getUser(),
+                    "New comment on your ticket #" + ticket.getId() + ".",
+                    NotificationType.NOTIFICATION,
+                    null
+            );
+        }
+        if (ticket.getAssignedTechnician() != null && !ticket.getAssignedTechnician().getId().equals(author.getId())) {
+            notificationService.sendToUser(
+                    ticket.getAssignedTechnician(),
+                    "New comment on assigned ticket #" + ticket.getId() + ".",
+                    NotificationType.NOTIFICATION,
+                    null
+            );
+        }
+        if (author.getRole() != Role.ADMIN) {
+            notificationService.sendToRole(
+                    Role.ADMIN,
+                    "New comment added on ticket #" + ticket.getId() + ".",
+                    NotificationType.NOTIFICATION,
+                    null
+            );
+        }
+
+        return Optional.of(saved);
     }
 
     public List<Comment> getCommentsForTicket(Long ticketId) {

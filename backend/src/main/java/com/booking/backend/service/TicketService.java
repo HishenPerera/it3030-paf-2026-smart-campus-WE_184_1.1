@@ -2,6 +2,8 @@ package com.booking.backend.service;
 
 import com.booking.backend.model.Ticket;
 import com.booking.backend.model.User;
+import com.booking.backend.model.NotificationType;
+import com.booking.backend.model.Role;
 import com.booking.backend.repository.TicketRepository;
 import com.booking.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +29,7 @@ public class TicketService {
 
     private final TicketRepository ticketRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
     
     // Directory relative to current working dir of the java process
     private final String uploadDir = "uploads/tickets/";
@@ -82,8 +85,18 @@ public class TicketService {
                 .imageUrls(imageUrls)
                 .user(user)
                 .build();
-                
-        return ticketRepository.save(ticket);
+
+        Ticket saved = ticketRepository.save(ticket);
+
+        // Notify admins that a new ticket was created
+        notificationService.sendToRole(
+                Role.ADMIN,
+                "New incident ticket #" + saved.getId() + " reported: " + saved.getResourceOrLocation() + " (" + saved.getPriority() + ")",
+                NotificationType.NOTIFICATION,
+                null
+        );
+
+        return saved;
     }
 
     private void validateImageFile(MultipartFile file) {
@@ -277,7 +290,19 @@ public class TicketService {
             }
         }
 
-        return Optional.of(ticketRepository.save(ticket));
+        Ticket saved = ticketRepository.save(ticket);
+
+        // Notify ticket owner about status changes
+        if (saved.getUser() != null && saved.getUser().getId() != null) {
+            notificationService.sendToUser(
+                    saved.getUser(),
+                    "Ticket #" + saved.getId() + " status changed to " + saved.getStatus() + ".",
+                    NotificationType.NOTIFICATION,
+                    null
+            );
+        }
+
+        return Optional.of(saved);
     }
 
     private String normalizeStatus(String status) {
@@ -347,7 +372,25 @@ public class TicketService {
 
         Ticket ticket = optionalTicket.get();
         ticket.setAssignedTechnician(technician);
-        return Optional.of(ticketRepository.save(ticket));
+        Ticket saved = ticketRepository.save(ticket);
+
+        // Notify assigned technician (if any) and the ticket owner
+        if (technician != null) {
+            notificationService.sendToUser(
+                    technician,
+                    "You have been assigned to ticket #" + saved.getId() + " (" + saved.getResourceOrLocation() + ").",
+                    NotificationType.NOTIFICATION,
+                    null
+            );
+        }
+        if (saved.getUser() != null) {
+            String msg = (technician != null)
+                    ? "Your ticket #" + saved.getId() + " has been assigned to a technician."
+                    : "Your ticket #" + saved.getId() + " has been unassigned.";
+            notificationService.sendToUser(saved.getUser(), msg, NotificationType.NOTIFICATION, null);
+        }
+
+        return Optional.of(saved);
     }
 
     public TicketStatistics getTicketStatistics(String email) {
