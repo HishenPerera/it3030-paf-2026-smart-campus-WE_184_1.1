@@ -66,11 +66,22 @@ export default function Dashboard() {
     return null; // Will redirect
   }
 
+  const role = user.role || 'USER';
   const quickActions = [
+    ...(role === 'ADMIN'
+      ? [{ id: 'admin-tickets', label: 'Ticket Management', hint: 'Manage all tickets', enabled: true, onClick: () => navigate('/admin') }]
+      : []),
+    ...(role === 'TECHNICIAN'
+      ? [{ id: 'assigned-tickets', label: 'Assigned Tickets', hint: 'View tickets assigned to you', enabled: true, onClick: () => navigate('/tickets') }]
+      : []),
+    ...(role === 'USER'
+      ? [
+          { id: 'report-incident', label: 'Report Incident', hint: 'Create a maintenance ticket', enabled: true, onClick: () => navigate('/create-ticket') },
+          { id: 'my-tickets', label: 'View My Tickets', hint: 'Track ticket status', enabled: true, onClick: () => navigate('/tickets') },
+        ]
+      : []),
     { id: 'create-booking', label: 'Create Booking', hint: 'Coming soon', enabled: false, onClick: () => {} },
     { id: 'view-resources', label: 'View Resources', hint: 'Coming soon', enabled: false, onClick: () => {} },
-    { id: 'report-incident', label: 'Report Incident', hint: 'Create a maintenance ticket', enabled: true, onClick: () => navigate('/create-ticket') },
-    { id: 'my-tickets', label: 'View My Tickets', hint: 'Track ticket status', enabled: true, onClick: () => navigate('/tickets') },
   ];
 
   const recentNotifications = (normalNotifications || []).slice(0, 5);
