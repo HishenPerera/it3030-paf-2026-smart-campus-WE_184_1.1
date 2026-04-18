@@ -35,6 +35,7 @@ export const fetchTickets = (params) => api.get('/api/tickets', { params }).then
 export const fetchTicketById = (id) => api.get(`/api/tickets/${id}`).then(r => r.data);
 export const updateTicketStatus = (ticketId, payload) => api.put(`/api/tickets/${ticketId}/status`, payload).then(r => r.data);
 export const assignTechnician = (ticketId, technicianId) => api.put(`/api/tickets/${ticketId}/assign`, { technicianId }).then(r => r.data);
+export const deleteTicketAttachment = (ticketId, imageUrl) => api.delete(`/api/tickets/${ticketId}/attachments`, { params: { imageUrl } }).then(r => r.data);
 export const createTicket = (formData) => api.post('/api/tickets', formData, {
   headers: {
     'Content-Type': 'multipart/form-data'

@@ -31,10 +31,6 @@ public class TicketController {
             @RequestParam(value = "files", required = false) List<MultipartFile> files) {
         
         try {
-            if (files != null && files.size() > 3) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "A maximum of 3 files allowed as evidence."));
-            }
-
             String email = null;
             if (principal != null) {
                 email = principal.getAttribute("email");
@@ -44,6 +40,8 @@ public class TicketController {
                     email, resourceOrLocation, category, description, priority, contactDetails, files);
 
             return ResponseEntity.status(HttpStatus.CREATED).body(ticket);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("message", "Error submitting ticket: " + e.getMessage()));
         }
@@ -57,7 +55,9 @@ public class TicketController {
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String resource,
             @RequestParam(required = false) Long assignedTechnicianId,
-            @RequestParam(required = false) String date) {
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
             
         String email = null;
         if (principal != null) {
@@ -65,9 +65,26 @@ public class TicketController {
         }
         
         List<Ticket> tickets = ticketService.getTicketsFiltered(
-                email, status, priority, category, resource, assignedTechnicianId, date);
+                email, status, priority, category, resource, assignedTechnicianId, search, startDate, endDate);
                 
         return ResponseEntity.ok(tickets);
+    }
+
+    @DeleteMapping("/{id}/attachments")
+    public ResponseEntity<?> deleteTicketAttachment(
+            @AuthenticationPrincipal OAuth2User principal,
+            @PathVariable Long id,
+            @RequestParam String imageUrl) {
+
+        String email = null;
+        if (principal != null) {
+            email = principal.getAttribute("email");
+        }
+
+        return ticketService.removeTicketAttachment(email, id, imageUrl)
+                .<ResponseEntity<?>>map(updatedTicket -> ResponseEntity.ok(updatedTicket))
+                .orElse(ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("message", "Unable to delete attachment. You may not be authorized or the attachment was not found.")));
     }
 
     @GetMapping("/{id}")

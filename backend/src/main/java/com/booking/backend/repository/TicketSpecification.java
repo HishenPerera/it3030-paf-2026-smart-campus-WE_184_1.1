@@ -3,6 +3,7 @@ package com.booking.backend.repository;
 import com.booking.backend.model.Ticket;
 import com.booking.backend.model.User;
 import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.util.StringUtils;
 
@@ -57,8 +58,51 @@ public class TicketSpecification {
     public static Specification<Ticket> createdOnDate(String dateStr) {
         return (root, query, cb) -> {
             if (!StringUtils.hasText(dateStr)) return null;
-            LocalDate targetDate = LocalDate.parse(dateStr);
-            return cb.between(root.get("createdAt"), targetDate.atStartOfDay(), targetDate.plusDays(1).atStartOfDay());
+            try {
+                LocalDate targetDate = LocalDate.parse(dateStr);
+                return cb.between(root.get("createdAt"), targetDate.atStartOfDay(), targetDate.plusDays(1).atStartOfDay());
+            } catch (Exception ex) {
+                return null;
+            }
+        };
+    }
+
+    public static Specification<Ticket> createdBetween(String startDateStr, String endDateStr) {
+        return (root, query, cb) -> {
+            if (!StringUtils.hasText(startDateStr) && !StringUtils.hasText(endDateStr)) return null;
+            try {
+                LocalDate startDate = StringUtils.hasText(startDateStr) ? LocalDate.parse(startDateStr) : null;
+                LocalDate endDate = StringUtils.hasText(endDateStr) ? LocalDate.parse(endDateStr) : null;
+
+                if (startDate != null && endDate != null) {
+                    return cb.between(root.get("createdAt"), startDate.atStartOfDay(), endDate.plusDays(1).atStartOfDay());
+                }
+                if (startDate != null) {
+                    return cb.greaterThanOrEqualTo(root.get("createdAt"), startDate.atStartOfDay());
+                }
+                return cb.lessThan(root.get("createdAt"), endDate.plusDays(1).atStartOfDay());
+            } catch (Exception ex) {
+                return null;
+            }
+        };
+    }
+
+    public static Specification<Ticket> matchesSearch(String searchTerms) {
+        return (root, query, cb) -> {
+            if (!StringUtils.hasText(searchTerms)) return null;
+            String lower = "%" + searchTerms.toLowerCase() + "%";
+            Predicate textMatch = cb.or(
+                    cb.like(cb.lower(root.get("resourceOrLocation")), lower),
+                    cb.like(cb.lower(root.get("category")), lower),
+                    cb.like(cb.lower(root.get("description")), lower),
+                    cb.like(cb.lower(root.get("contactDetails")), lower)
+            );
+            try {
+                Long numericId = Long.parseLong(searchTerms.trim());
+                return cb.or(textMatch, cb.equal(root.get("id"), numericId));
+            } catch (NumberFormatException ignored) {
+                return textMatch;
+            }
         };
     }
 }

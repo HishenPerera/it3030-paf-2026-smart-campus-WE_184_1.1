@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { fetchTicketById, fetchCurrentUser, updateTicketStatus, fetchTechnicians, assignTechnician, fetchComments, addComment, updateComment, deleteComment } from '../api/api';
+import { fetchTicketById, fetchCurrentUser, updateTicketStatus, fetchTechnicians, assignTechnician, deleteTicketAttachment, fetchComments, addComment, updateComment, deleteComment } from '../api/api';
 import { useNotifications } from '../context/NotificationContext';
 import { ArrowLeft, Image as ImageIcon, Edit2, Trash2, MessageSquare, Send } from 'lucide-react';
 import './TicketDetails.css';
@@ -31,6 +31,7 @@ export default function TicketDetails() {
   const [editingComment, setEditingComment] = useState(null);
   const [editCommentContent, setEditCommentContent] = useState('');
   const [commentLoading, setCommentLoading] = useState(false);
+  const [deletingAttachment, setDeletingAttachment] = useState('');
   const navigate = useNavigate();
   const { showNotification } = useNotifications();
 
@@ -186,6 +187,22 @@ export default function TicketDetails() {
       showNotification('Failed to delete comment.', 'error');
     } finally {
       setCommentLoading(false);
+    }
+  };
+
+  const handleDeleteAttachment = async (imageUrl) => {
+    if (!confirm('Delete this evidence image?')) {
+      return;
+    }
+    setDeletingAttachment(imageUrl);
+    try {
+      const updated = await deleteTicketAttachment(id, imageUrl);
+      setTicket(updated);
+      showNotification('Attachment removed successfully.', 'success');
+    } catch (err) {
+      showNotification('Failed to remove attachment.', 'error');
+    } finally {
+      setDeletingAttachment('');
     }
   };
 
@@ -352,10 +369,20 @@ export default function TicketDetails() {
           {ticket.imageUrls && ticket.imageUrls.length > 0 ? (
             <div className="image-gallery">
               {ticket.imageUrls.map((url, idx) => (
-                <a key={idx} href={`http://localhost:8080${url}`} target="_blank" rel="noreferrer" className="image-card">
-                  <img src={`http://localhost:8080${url}`} alt={`Evidence ${idx + 1}`} />
-                  <span>Evidence {idx + 1}</span>
-                </a>
+                <div key={idx} className="attachment-card">
+                  <a href={`http://localhost:8080${url}`} target="_blank" rel="noreferrer" className="image-card">
+                    <img src={`http://localhost:8080${url}`} alt={`Evidence ${idx + 1}`} />
+                    <span>Evidence {idx + 1}</span>
+                  </a>
+                  <button
+                    type="button"
+                    className="delete-image-btn"
+                    onClick={() => handleDeleteAttachment(url)}
+                    disabled={deletingAttachment === url}
+                  >
+                    {deletingAttachment === url ? 'Removing…' : 'Delete'}
+                  </button>
+                </div>
               ))}
             </div>
           ) : (

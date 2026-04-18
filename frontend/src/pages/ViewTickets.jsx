@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchTickets, fetchCurrentUser } from '../api/api';
+import { fetchTickets, fetchCurrentUser, fetchTechnicians } from '../api/api';
 import { useNotifications } from '../context/NotificationContext';
 import { Filter, ArrowLeft, Image as ImageIcon, Search } from 'lucide-react';
 import './ViewTickets.css';
@@ -11,12 +11,16 @@ export default function ViewTickets() {
   const [userRole, setUserRole] = useState('USER');
   
   const [filters, setFilters] = useState({
+    search: '',
     status: '',
     priority: '',
     category: '',
     resource: '',
-    date: ''
+    technicianId: '',
+    startDate: '',
+    endDate: ''
   });
+  const [technicians, setTechnicians] = useState([]);
 
   const navigate = useNavigate();
   const { showNotification } = useNotifications();
@@ -26,6 +30,14 @@ export default function ViewTickets() {
       try {
         const user = await fetchCurrentUser();
         setUserRole(user.role || 'USER');
+        if (user.role === 'ADMIN') {
+          try {
+            const techList = await fetchTechnicians();
+            setTechnicians(techList);
+          } catch (err) {
+            // ignore if the technician list cannot be fetched
+          }
+        }
         await loadTickets();
       } catch (err) {
         showNotification('Failed to load tickets', 'error');
@@ -66,7 +78,7 @@ export default function ViewTickets() {
   };
 
   const clearFilters = () => {
-    const emptyFilters = { status: '', priority: '', category: '', resource: '', date: '' };
+    const emptyFilters = { search: '', status: '', priority: '', category: '', resource: '', technicianId: '', startDate: '', endDate: '' };
     setFilters(emptyFilters);
     loadTickets(emptyFilters);
   };
@@ -137,16 +149,36 @@ export default function ViewTickets() {
               <option value="Other">Other</option>
             </select>
           </div>
+          <div className="filter-group filter-full-width">
+            <label>Search Tickets</label>
+            <div className="search-input-wrapper">
+              <Search size={16} />
+              <input type="text" name="search" placeholder="Title, ID, resource, category or description" value={filters.search} onChange={handleFilterChange} />
+            </div>
+          </div>
           <div className="filter-group">
             <label>Resource / Location</label>
             <div className="search-input-wrapper">
               <Search size={16} />
-              <input type="text" name="resource" placeholder="Search..." value={filters.resource} onChange={handleFilterChange} />
+              <input type="text" name="resource" placeholder="Resource or location" value={filters.resource} onChange={handleFilterChange} />
             </div>
           </div>
           <div className="filter-group">
-            <label>Date Created</label>
-            <input type="date" name="date" value={filters.date} onChange={handleFilterChange} />
+            <label>Technician</label>
+            <select name="technicianId" value={filters.technicianId} onChange={handleFilterChange}>
+              <option value="">All</option>
+              {technicians.map((tech) => (
+                <option key={tech.id} value={tech.id}>{tech.name || tech.email}</option>
+              ))}
+            </select>
+          </div>
+          <div className="filter-group">
+            <label>Date From</label>
+            <input type="date" name="startDate" value={filters.startDate} onChange={handleFilterChange} />
+          </div>
+          <div className="filter-group">
+            <label>Date To</label>
+            <input type="date" name="endDate" value={filters.endDate} onChange={handleFilterChange} />
           </div>
           <div className="filter-actions">
             <button type="button" className="btn-secondary" onClick={clearFilters}>Clear</button>

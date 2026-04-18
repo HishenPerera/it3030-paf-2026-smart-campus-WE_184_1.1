@@ -29,13 +29,28 @@ export default function CreateTicket() {
 
   const handleFileChange = (e) => {
     const selectedFiles = Array.from(e.target.files);
-    
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif'];
+    const maxSize = 5 * 1024 * 1024;
+
     if (files.length + selectedFiles.length > 3) {
       showNotification('You can only upload up to 3 images as evidence', 'error');
       return;
     }
-    
-    setFiles(prev => [...prev, ...selectedFiles].slice(0, 3));
+
+    const validatedFiles = [];
+    for (const file of selectedFiles) {
+      if (!allowedTypes.includes(file.type)) {
+        showNotification(`Invalid file type: ${file.name}. Use PNG, JPG or GIF.`, 'error');
+        continue;
+      }
+      if (file.size > maxSize) {
+        showNotification(`File too large: ${file.name}. Max 5MB per image.`, 'error');
+        continue;
+      }
+      validatedFiles.push(file);
+    }
+
+    setFiles(prev => [...prev, ...validatedFiles].slice(0, 3));
   };
 
   const removeFile = (index) => {
@@ -174,7 +189,7 @@ export default function CreateTicket() {
                 type="file" 
                 ref={fileInputRef} 
                 onChange={handleFileChange} 
-                accept="image/*" 
+                accept="image/png,image/jpeg,image/jpg,image/gif" 
                 multiple 
                 style={{display: 'none'}} 
               />

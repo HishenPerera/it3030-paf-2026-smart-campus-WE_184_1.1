@@ -28,6 +28,8 @@ public class TicketService {
     
     // Directory relative to current working dir of the java process
     private final String uploadDir = "uploads/tickets/";
+    private static final long MAX_FILE_SIZE = 5 * 1024 * 1024;
+    private static final List<String> ALLOWED_FILE_TYPES = List.of("image/png", "image/jpeg", "image/jpg", "image/gif");
 
     public Ticket createTicket(String email, String resourceOrLocation, String category,
                                String description, String priority, String contactDetails,
@@ -36,6 +38,10 @@ public class TicketService {
         List<String> imageUrls = new ArrayList<>();
         
         if (files != null && !files.isEmpty()) {
+            if (files.size() > 3) {
+                throw new IllegalArgumentException("A maximum of 3 images are allowed.");
+            }
+
             Path uploadPath = Paths.get(uploadDir);
             if (!Files.exists(uploadPath)) {
                 Files.createDirectories(uploadPath);
@@ -43,6 +49,7 @@ public class TicketService {
             
             for (MultipartFile file : files) {
                 if (file.isEmpty()) continue;
+                validateImageFile(file);
                 
                 String originalFilename = StringUtils.cleanPath(file.getOriginalFilename() != null ? file.getOriginalFilename() : "");
                 String extension = "";
@@ -77,9 +84,19 @@ public class TicketService {
         return ticketRepository.save(ticket);
     }
 
+    private void validateImageFile(MultipartFile file) {
+        if (file.getSize() > MAX_FILE_SIZE) {
+            throw new IllegalArgumentException("Each image must be 5MB or smaller.");
+        }
+        if (!ALLOWED_FILE_TYPES.contains(file.getContentType())) {
+            throw new IllegalArgumentException("Only PNG, JPEG, JPG, and GIF images are allowed.");
+        }
+    }
+
     public List<Ticket> getTicketsFiltered(String email, String status, String priority, 
                                            String category, String resource, 
-                                           Long assignedTechnicianId, String dateStr) {
+                                           Long assignedTechnicianId, String search,
+                                           String startDate, String endDate) {
         User requestUser = null;
         if (email != null) {
             requestUser = userRepository.findByEmail(email).orElse(null);
@@ -102,9 +119,60 @@ public class TicketService {
                    .and(com.booking.backend.repository.TicketSpecification.hasCategory(category))
                    .and(com.booking.backend.repository.TicketSpecification.containsResource(resource))
                    .and(com.booking.backend.repository.TicketSpecification.hasAssignedTechnician(assignedTechnicianId))
-                   .and(com.booking.backend.repository.TicketSpecification.createdOnDate(dateStr));
+                   .and(com.booking.backend.repository.TicketSpecification.matchesSearch(search))
+                   .and(com.booking.backend.repository.TicketSpecification.createdBetween(startDate, endDate));
 
         return ticketRepository.findAll(spec);
+    }
+
+    public Optional<Ticket> removeTicketAttachment(String email, Long ticketId, String imageUrl) {
+        User requestUser = null;
+        if (email != null) {
+            requestUser = userRepository.findByEmail(email).orElse(null);
+        }
+        if (requestUser == null) {
+            return Optional.empty();
+        }
+
+        Optional<Ticket> optionalTicket = ticketRepository.findById(ticketId);
+        if (optionalTicket.isEmpty()) {
+            return Optional.empty();
+        }
+
+        Ticket ticket = optionalTicket.get();
+        boolean isAdmin = requestUser.getRole() == com.booking.backend.model.Role.ADMIN;
+        boolean isOwner = ticket.getUser() != null && ticket.getUser().getId().equals(requestUser.getId());
+        boolean isAssignedTech = ticket.getAssignedTechnician() != null && ticket.getAssignedTechnician().getId().equals(requestUser.getId());
+
+        if (!(isAdmin || isOwner || isAssignedTech)) {
+            return Optional.empty();
+        }
+
+        if (ticket.getImageUrls() == null || !ticket.getImageUrls().contains(imageUrl)) {
+            return Optional.empty();
+        }
+
+        ticket.getImageUrls().remove(imageUrl);
+
+        try {
+            String fileName = imageUrl;
+            if (fileName.startsWith("/uploads/tickets/")) {
+                fileName = fileName.substring("/uploads/tickets/".length());
+            } else if (fileName.startsWith("http://") || fileName.startsWith("https://")) {
+                int lastSlash = fileName.lastIndexOf('/');
+                if (lastSlash >= 0) {
+                    fileName = fileName.substring(lastSlash + 1);
+                }
+            }
+            Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
+            Path filePath = uploadPath.resolve(fileName).normalize();
+            if (filePath.startsWith(uploadPath) && Files.exists(filePath)) {
+                Files.delete(filePath);
+            }
+        } catch (IOException ignored) {
+        }
+
+        return Optional.of(ticketRepository.save(ticket));
     }
 
     public Optional<Ticket> getTicketById(String email, Long ticketId) {

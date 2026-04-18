@@ -47,6 +47,10 @@
   gap: 0.5rem;
 }
 
+.filter-full-width {
+  grid-column: span 2;
+}
+
 .filter-group label {
   font-size: 0.85rem;
   color: var(--text-secondary);
