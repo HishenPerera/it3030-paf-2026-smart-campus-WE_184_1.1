@@ -105,3 +105,4 @@ public class ReservationController {
         }
     }
 }
+// Reservation endpoints secured with OAuth2 checks
