@@ -75,4 +75,34 @@ public class TicketService {
                 
         return ticketRepository.save(ticket);
     }
+
+    public List<Ticket> getTicketsFiltered(String email, String status, String priority, 
+                                           String category, String resource, 
+                                           Long assignedTechnicianId, String dateStr) {
+        User requestUser = null;
+        if (email != null) {
+            requestUser = userRepository.findByEmail(email).orElse(null);
+        }
+        if (requestUser == null) return new ArrayList<>();
+
+        org.springframework.data.jpa.domain.Specification<Ticket> spec = (root, query, cb) -> cb.conjunction();
+
+        // Role-based visibility isolation
+        if (requestUser.getRole() == com.booking.backend.model.Role.USER) {
+            spec = spec.and(com.booking.backend.repository.TicketSpecification.isCreatedBy(requestUser.getId()));
+        } else if (requestUser.getRole() == com.booking.backend.model.Role.TECHNICIAN) {
+            spec = spec.and(com.booking.backend.repository.TicketSpecification.hasAssignedTechnician(requestUser.getId()));
+        }
+        // ADMIN has no baseline restrictions
+
+        // User driven Dynamic Filters
+        spec = spec.and(com.booking.backend.repository.TicketSpecification.hasStatus(status))
+                   .and(com.booking.backend.repository.TicketSpecification.hasPriority(priority))
+                   .and(com.booking.backend.repository.TicketSpecification.hasCategory(category))
+                   .and(com.booking.backend.repository.TicketSpecification.containsResource(resource))
+                   .and(com.booking.backend.repository.TicketSpecification.hasAssignedTechnician(assignedTechnicianId))
+                   .and(com.booking.backend.repository.TicketSpecification.createdOnDate(dateStr));
+
+        return ticketRepository.findAll(spec);
+    }
 }

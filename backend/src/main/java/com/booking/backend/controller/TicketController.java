@@ -47,4 +47,25 @@ public class TicketController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(java.util.Map.of("message", "Error submitting ticket: " + e.getMessage()));
         }
     }
+
+    @GetMapping
+    public ResponseEntity<List<Ticket>> getTickets(
+            @AuthenticationPrincipal OAuth2User principal,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String priority,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String resource,
+            @RequestParam(required = false) Long assignedTechnicianId,
+            @RequestParam(required = false) String date) {
+            
+        String email = null;
+        if (principal != null) {
+            email = principal.getAttribute("email");
+        }
+        
+        List<Ticket> tickets = ticketService.getTicketsFiltered(
+                email, status, priority, category, resource, assignedTechnicianId, date);
+                
+        return ResponseEntity.ok(tickets);
+    }
 }

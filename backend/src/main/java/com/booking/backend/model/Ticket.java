@@ -50,6 +50,10 @@ public class Ticket {
     @JoinColumn(name = "user_id")
     private User user;
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "technician_id")
+    private User assignedTechnician;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
