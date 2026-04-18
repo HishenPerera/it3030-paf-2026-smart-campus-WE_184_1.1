@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/tickets/{ticketId}/comments")
@@ -39,9 +40,18 @@ public class CommentController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Comment>> getComments(@PathVariable Long ticketId) {
-        List<Comment> comments = commentService.getCommentsForTicket(ticketId);
-        return ResponseEntity.ok(comments);
+    public ResponseEntity<?> getComments(
+            @AuthenticationPrincipal OAuth2User principal,
+            @PathVariable Long ticketId) {
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Unauthorized"));
+        }
+
+        String email = principal.getAttribute("email");
+        Optional<List<Comment>> comments = commentService.getCommentsForTicket(email, ticketId);
+        return comments.<ResponseEntity<?>>map(ResponseEntity::ok)
+                .orElse(ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("message", "Unable to view comments. You may not be authorized.")));
     }
 
     @PutMapping("/{commentId}")

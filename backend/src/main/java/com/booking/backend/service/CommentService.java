@@ -99,6 +99,37 @@ public class CommentService {
         return commentRepository.findByTicketIdOrderByCreatedAtAsc(ticketId);
     }
 
+    public Optional<List<Comment>> getCommentsForTicket(String email, Long ticketId) {
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user == null) {
+            return Optional.empty();
+        }
+
+        Optional<Ticket> ticketOpt = ticketRepository.findById(ticketId);
+        if (ticketOpt.isEmpty()) {
+            return Optional.empty();
+        }
+
+        Ticket ticket = ticketOpt.get();
+
+        boolean canView = false;
+        if (user.getRole() == com.booking.backend.model.Role.ADMIN) {
+            canView = true;
+        } else if (user.getRole() == com.booking.backend.model.Role.TECHNICIAN) {
+            canView = ticket.getAssignedTechnician() != null &&
+                    ticket.getAssignedTechnician().getId().equals(user.getId());
+        } else if (user.getRole() == com.booking.backend.model.Role.USER) {
+            canView = ticket.getUser() != null &&
+                    ticket.getUser().getId().equals(user.getId());
+        }
+
+        if (!canView) {
+            return Optional.empty();
+        }
+
+        return Optional.of(commentRepository.findByTicketIdOrderByCreatedAtAsc(ticketId));
+    }
+
     @Transactional
     public Optional<Comment> updateComment(String email, Long ticketId, Long commentId, String newContent) {
         User user = userRepository.findByEmail(email).orElse(null);
