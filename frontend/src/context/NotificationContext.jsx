@@ -1,10 +1,12 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { fetchNotifications, markNotificationRead } from '../api/api';
+import ToastContainer from '../components/ToastContainer';
 
 const NotificationContext = createContext();
 
 export const NotificationProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
+  const [toasts, setToasts] = useState([]);
   
   const fetchMyNotifications = async () => {
     try {
@@ -42,12 +44,34 @@ export const NotificationProvider = ({ children }) => {
   const normalNotifications = notifications.filter(n => n.type === 'NOTIFICATION');
   const unreadNormalCount = normalNotifications.filter(n => !n.isRead).length;
 
-  const showNotification = (message, type) => {
-    console.log(`${type}: ${message}`);
+  const removeToast = (id) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
   };
 
+  const showNotification = useCallback((message, type = 'info') => {
+    const id = `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    const normalizedType = (type || 'info').toLowerCase();
+    const toast = { id, message, type: normalizedType };
+    setToasts(prev => [toast, ...prev].slice(0, 5));
+
+    // Auto-dismiss after 3.5s (errors stick slightly longer)
+    const ttl = normalizedType === 'error' ? 5500 : 3500;
+    window.setTimeout(() => removeToast(id), ttl);
+  }, []);
+
+  const value = useMemo(() => ({
+    notifications,
+    alerts,
+    normalNotifications,
+    unreadNormalCount,
+    markAsRead,
+    fetchMyNotifications,
+    showNotification
+  }), [notifications, alerts, normalNotifications, unreadNormalCount, showNotification]);
+
   return (
-    <NotificationContext.Provider value={{ notifications, alerts, normalNotifications, unreadNormalCount, markAsRead, fetchMyNotifications, showNotification }}>
+    <NotificationContext.Provider value={value}>
+      <ToastContainer toasts={toasts} onClose={removeToast} />
       {children}
     </NotificationContext.Provider>
   );

@@ -1,6 +1,7 @@
 package com.booking.backend.service;
 
 import com.booking.backend.model.Ticket;
+import com.booking.backend.model.TicketStatistics;
 import com.booking.backend.model.User;
 import com.booking.backend.model.NotificationType;
 import com.booking.backend.model.Role;

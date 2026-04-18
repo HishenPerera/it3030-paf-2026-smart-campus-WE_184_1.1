@@ -1,6 +1,7 @@
 package com.booking.backend.controller;
 
 import com.booking.backend.model.Ticket;
+import com.booking.backend.model.TicketResponse;
 import com.booking.backend.model.TicketStatistics;
 import com.booking.backend.service.TicketService;
 import lombok.RequiredArgsConstructor;
@@ -40,7 +41,7 @@ public class TicketController {
             Ticket ticket = ticketService.createTicket(
                     email, resourceOrLocation, category, description, priority, contactDetails, files);
 
-            return ResponseEntity.status(HttpStatus.CREATED).body(ticket);
+            return ResponseEntity.status(HttpStatus.CREATED).body(TicketResponse.from(ticket));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
@@ -49,7 +50,7 @@ public class TicketController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Ticket>> getTickets(
+    public ResponseEntity<List<TicketResponse>> getTickets(
             @AuthenticationPrincipal OAuth2User principal,
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String priority,
@@ -67,8 +68,12 @@ public class TicketController {
         
         List<Ticket> tickets = ticketService.getTicketsFiltered(
                 email, status, priority, category, resource, assignedTechnicianId, search, startDate, endDate);
-                
-        return ResponseEntity.ok(tickets);
+
+        List<TicketResponse> responses = tickets.stream()
+                .map(TicketResponse::from)
+                .toList();
+
+        return ResponseEntity.ok(responses);
     }
 
     @GetMapping("/statistics")
@@ -95,7 +100,7 @@ public class TicketController {
         }
 
         return ticketService.removeTicketAttachment(email, id, imageUrl)
-                .<ResponseEntity<?>>map(updatedTicket -> ResponseEntity.ok(updatedTicket))
+                .<ResponseEntity<?>>map(updatedTicket -> ResponseEntity.ok(TicketResponse.from(updatedTicket)))
                 .orElse(ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(Map.of("message", "Unable to delete attachment. You may not be authorized or the attachment was not found.")));
     }
@@ -111,7 +116,7 @@ public class TicketController {
         }
 
         return ticketService.getTicketById(email, id)
-                .<ResponseEntity<?>>map(ticket -> ResponseEntity.ok(ticket))
+                .<ResponseEntity<?>>map(ticket -> ResponseEntity.ok(TicketResponse.from(ticket)))
                 .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(Map.of("message", "Ticket not found or access denied.")));
     }
@@ -130,7 +135,7 @@ public class TicketController {
         Long technicianId = payload.get("technicianId");
 
         return ticketService.assignTechnician(email, id, technicianId)
-                .<ResponseEntity<?>>map(updatedTicket -> ResponseEntity.ok(updatedTicket))
+                .<ResponseEntity<?>>map(updatedTicket -> ResponseEntity.ok(TicketResponse.from(updatedTicket)))
                 .orElse(ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(Map.of("message", "Unable to assign technician. You may not be authorized or the technician is invalid.")));
     }
@@ -151,7 +156,7 @@ public class TicketController {
         String resolutionNotes = (String) payload.get("resolutionNotes");
 
         return ticketService.updateTicketStatus(email, id, status, rejectionReason, resolutionNotes)
-                .<ResponseEntity<?>>map(updatedTicket -> ResponseEntity.ok(updatedTicket))
+                .<ResponseEntity<?>>map(updatedTicket -> ResponseEntity.ok(TicketResponse.from(updatedTicket)))
                 .orElse(ResponseEntity.status(HttpStatus.FORBIDDEN)
                         .body(Map.of("message", "Unable to update ticket status. You may not be authorized or the status transition is invalid.")));
     }

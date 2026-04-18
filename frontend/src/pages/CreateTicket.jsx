@@ -1,6 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createTicket } from '../api/api';
+import { createTicket, fetchCurrentUser } from '../api/api';
 import { UploadCloud, X, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import useNotifications from '../context/useNotifications';
 import './CreateTicket.css';
@@ -22,6 +22,18 @@ export default function CreateTicket() {
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
   const { showNotification } = useNotifications();
+
+  useEffect(() => {
+    const ensureAuth = async () => {
+      try {
+        await fetchCurrentUser();
+      } catch {
+        showNotification('Please login to report an incident.', 'error');
+        navigate('/login');
+      }
+    };
+    ensureAuth();
+  }, [navigate, showNotification]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -97,6 +109,7 @@ export default function CreateTicket() {
 
     try {
       await createTicket(data);
+      showNotification('Incident ticket submitted successfully.', 'success');
       setSuccess(true);
       setTimeout(() => {
          navigate('/dashboard');

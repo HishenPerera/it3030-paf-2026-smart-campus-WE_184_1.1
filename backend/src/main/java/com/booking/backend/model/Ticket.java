@@ -1,6 +1,6 @@
 package com.booking.backend.model;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -31,20 +31,25 @@ public class Ticket {
     @Column(nullable = false, length = 2000)
     private String description;
 
-    @Column(nullable = false)
+    @Column(name = "priority_level", nullable = false)
     private String priority;
+
+    // Compatibility: some DB schemas have a NOT NULL `priority` column
+    @JsonIgnore
+    @Column(name = "priority", nullable = false)
+    private String priorityLegacy;
 
     @Column(nullable = false)
     private String contactDetails;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "ticket_images", joinColumns = @JoinColumn(name = "ticket_id"))
     @Column(name = "image_url")
     private List<String> imageUrls;
 
     @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @OrderBy("createdAt ASC")
-    @JsonManagedReference
+    @JsonIgnore
     private List<Comment> comments;
 
     @Column(length = 2000)
@@ -73,6 +78,28 @@ public class Ticket {
         createdAt = LocalDateTime.now();
         if (status == null) {
             status = "Open";
+        }
+        syncPriorityColumns();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        syncPriorityColumns();
+    }
+
+    private void syncPriorityColumns() {
+        if (priority == null || priority.isBlank()) {
+            priority = priorityLegacy;
+        }
+        if (priorityLegacy == null || priorityLegacy.isBlank()) {
+            priorityLegacy = priority;
+        }
+        // final fallback to avoid NOT NULL insert failures
+        if (priority == null || priority.isBlank()) {
+            priority = "Low";
+        }
+        if (priorityLegacy == null || priorityLegacy.isBlank()) {
+            priorityLegacy = "Low";
         }
     }
 }

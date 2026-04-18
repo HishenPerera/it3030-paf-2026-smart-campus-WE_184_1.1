@@ -9,9 +9,11 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.http.MediaType;
 
 @Configuration
 @EnableWebSecurity
@@ -40,6 +42,17 @@ public class SecurityConfig {
                 )
                 .defaultSuccessUrl("http://localhost:5173/dashboard", true)
             )
+            // For API calls, return 401 instead of redirecting to OAuth login
+            .exceptionHandling(ex -> ex
+                .defaultAuthenticationEntryPointFor(
+                    (request, response, authException) -> {
+                        response.setStatus(401);
+                        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                        response.getWriter().write("{\"message\":\"Unauthorized\"}");
+                    },
+                    apiRequestMatcher()
+                )
+            )
             .logout(logout -> logout
                 .logoutUrl("/api/logout")
                 .logoutSuccessHandler((request, response, authentication) -> {
@@ -48,6 +61,13 @@ public class SecurityConfig {
                 .permitAll()
             );
         return http.build();
+    }
+
+    private RequestMatcher apiRequestMatcher() {
+        return request -> {
+            String uri = request.getRequestURI();
+            return uri != null && uri.startsWith("/api/");
+        };
     }
 
     @Bean
