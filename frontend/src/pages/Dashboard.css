@@ -237,6 +237,105 @@
   filter: brightness(1.05);
 }
 
+.dashboard-panels {
+  margin-top: 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1rem;
+}
+
+.dashboard-panel {
+  padding: 1.5rem;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.panel-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: var(--text-primary);
+}
+
+.panel-subtitle {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.quick-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.quick-action-btn {
+  text-align: left;
+  padding: 0.9rem 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03)),
+    rgba(15, 23, 42, 0.35);
+  transition: transform 0.15s ease, border-color 0.15s ease, filter 0.15s ease;
+}
+
+.quick-action-btn:hover {
+  transform: translateY(-1px);
+  border-color: rgba(165, 180, 252, 0.35);
+  filter: brightness(1.03);
+}
+
+.quick-action-btn.disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.quick-action-label {
+  display: block;
+  font-weight: 650;
+  color: var(--text-primary);
+}
+
+.quick-action-hint {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+}
+
+.recent-notifications {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.recent-notification {
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.recent-notification.unread {
+  border-color: rgba(99, 102, 241, 0.35);
+  background: rgba(99, 102, 241, 0.10);
+}
+
+.recent-notification-message {
+  color: var(--text-primary);
+  font-size: 0.95rem;
+}
+
+.recent-notification-time {
+  margin-top: 0.35rem;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+}
+
 .loader {
   border: 3px solid rgba(255, 255, 255, 0.1);
   border-top: 3px solid var(--primary-color);
@@ -272,5 +371,9 @@
 
   .welcome-card h1 {
     font-size: 2rem;
+  }
+
+  .quick-actions-grid {
+    grid-template-columns: 1fr;
   }
 }
