@@ -15,6 +15,7 @@ export const fetchCurrentUser = () => api.get('/api/user/me').then(r => r.data);
 export const fetchAllUsers = () => api.get('/api/admin/users').then(r => r.data);
 export const fetchTechnicians = () => api.get('/api/admin/technicians').then(r => r.data);
 export const updateUserRole = (id, role) => api.put(`/api/admin/users/${id}/role`, { role }).then(r => r.data);
+export const fetchDashboardStats = () => api.get('/api/tickets/statistics').then(r => r.data);
 
 // ── Notifications ────────────────────────────────────────
 export const fetchNotifications = () => api.get('/api/notifications').then(r => r.data);

@@ -1,6 +1,7 @@
 package com.booking.backend.controller;
 
 import com.booking.backend.model.Ticket;
+import com.booking.backend.model.TicketStatistics;
 import com.booking.backend.service.TicketService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -68,6 +69,18 @@ public class TicketController {
                 email, status, priority, category, resource, assignedTechnicianId, search, startDate, endDate);
                 
         return ResponseEntity.ok(tickets);
+    }
+
+    @GetMapping("/statistics")
+    public ResponseEntity<TicketStatistics> getTicketStatistics(
+            @AuthenticationPrincipal OAuth2User principal) {
+        String email = null;
+        if (principal != null) {
+            email = principal.getAttribute("email");
+        }
+
+        TicketStatistics stats = ticketService.getTicketStatistics(email);
+        return ResponseEntity.ok(stats);
     }
 
     @DeleteMapping("/{id}/attachments")

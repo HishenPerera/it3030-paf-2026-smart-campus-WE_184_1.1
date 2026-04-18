@@ -53,6 +53,8 @@ public class Ticket {
     @Column(length = 1000)
     private String rejectionReason;
 
+    private LocalDateTime resolvedAt;
+
     private LocalDateTime createdAt;
 
     @Column(nullable = false)

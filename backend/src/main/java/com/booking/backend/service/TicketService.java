@@ -14,6 +14,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -262,12 +264,17 @@ public class TicketService {
         if ("REJECTED".equals(normalizedNext)) {
             ticket.setRejectionReason(rejectionReason);
             ticket.setResolutionNotes(null);
+            ticket.setResolvedAt(null);
         } else if ("RESOLVED".equals(normalizedNext)) {
             ticket.setResolutionNotes(resolutionNotes);
             ticket.setRejectionReason(null);
+            ticket.setResolvedAt(LocalDateTime.now());
         } else {
             ticket.setRejectionReason(null);
             ticket.setResolutionNotes(null);
+            if (!"CLOSED".equals(normalizedNext)) {
+                ticket.setResolvedAt(null);
+            }
         }
 
         return Optional.of(ticketRepository.save(ticket));
@@ -341,5 +348,66 @@ public class TicketService {
         Ticket ticket = optionalTicket.get();
         ticket.setAssignedTechnician(technician);
         return Optional.of(ticketRepository.save(ticket));
+    }
+
+    public TicketStatistics getTicketStatistics(String email) {
+        User requestUser = null;
+        if (email != null) {
+            requestUser = userRepository.findByEmail(email).orElse(null);
+        }
+        if (requestUser == null) {
+            return new TicketStatistics(0L, 0L, 0L, 0L, "N/A");
+        }
+
+        org.springframework.data.jpa.domain.Specification<Ticket> spec = (root, query, cb) -> cb.conjunction();
+        if (requestUser.getRole() == com.booking.backend.model.Role.USER) {
+            spec = spec.and(com.booking.backend.repository.TicketSpecification.isCreatedBy(requestUser.getId()));
+        } else if (requestUser.getRole() == com.booking.backend.model.Role.TECHNICIAN) {
+            spec = spec.and(com.booking.backend.repository.TicketSpecification.hasAssignedTechnician(requestUser.getId()));
+        }
+
+        List<Ticket> tickets = ticketRepository.findAll(spec);
+        long openCount = tickets.stream().filter(t -> "Open".equalsIgnoreCase(t.getStatus())).count();
+        long inProgressCount = tickets.stream().filter(t -> "In Progress".equalsIgnoreCase(t.getStatus())).count();
+        long resolvedCount = tickets.stream().filter(t -> "Resolved".equalsIgnoreCase(t.getStatus())).count();
+        long highPriorityCount = tickets.stream().filter(t -> {
+            String priority = t.getPriority();
+            return "High".equalsIgnoreCase(priority) || "Critical".equalsIgnoreCase(priority);
+        }).count();
+
+        double averageResolutionHours = tickets.stream()
+                .filter(t -> t.getResolvedAt() != null && t.getCreatedAt() != null)
+                .mapToDouble(t -> Duration.between(t.getCreatedAt(), t.getResolvedAt()).toMinutes() / 60.0)
+                .average()
+                .orElse(0.0);
+
+        String averageResolutionTime = formatDuration(averageResolutionHours);
+        if (averageResolutionHours <= 0) {
+            averageResolutionTime = "N/A";
+        }
+
+        return new TicketStatistics(openCount, inProgressCount, resolvedCount, highPriorityCount, averageResolutionTime);
+    }
+
+    private String formatDuration(double hours) {
+        if (hours <= 0) {
+            return "N/A";
+        }
+        long totalMinutes = Math.round(hours * 60);
+        long days = totalMinutes / 1440;
+        long remainingMinutes = totalMinutes % 1440;
+        long hrs = remainingMinutes / 60;
+        long mins = remainingMinutes % 60;
+        StringBuilder builder = new StringBuilder();
+        if (days > 0) {
+            builder.append(days).append("d ");
+        }
+        if (hrs > 0) {
+            builder.append(hrs).append("h ");
+        }
+        if (mins > 0 || builder.isEmpty()) {
+            builder.append(mins).append("m");
+        }
+        return builder.toString().trim();
     }
 }

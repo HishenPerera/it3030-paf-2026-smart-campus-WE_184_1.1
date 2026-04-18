@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchCurrentUser, logout } from '../api/api';
+import { fetchCurrentUser, fetchDashboardStats, logout } from '../api/api';
 import NotificationBell from '../components/NotificationBell';
 import './Dashboard.css';
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -75,7 +76,47 @@ export default function Dashboard() {
         <div className="welcome-card glass-panel">
           <h1>Welcome back, {user.given_name || user.name || user.login}!</h1>
           <p>You have successfully authenticated via OAuth2 through Spring Boot.</p>
-          
+
+          {stats && (
+            <div className="stats-grid">
+              <div className="stat-card">
+                <div className="stat-icon">📋</div>
+                <div className="stat-content">
+                  <h3>{stats.totalOpenTickets}</h3>
+                  <p>Total Open Tickets</p>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon">⚡</div>
+                <div className="stat-content">
+                  <h3>{stats.ticketsInProgress}</h3>
+                  <p>Tickets In Progress</p>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon">✅</div>
+                <div className="stat-content">
+                  <h3>{stats.resolvedTickets}</h3>
+                  <p>Resolved Tickets</p>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon">🚨</div>
+                <div className="stat-content">
+                  <h3>{stats.highPriorityIncidents}</h3>
+                  <p>High Priority Incidents</p>
+                </div>
+              </div>
+              <div className="stat-card stat-full-width">
+                <div className="stat-icon">⏱️</div>
+                <div className="stat-content">
+                  <h3>{stats.averageResolutionTime}</h3>
+                  <p>Average Resolution Time</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="raw-data-section">
             <h3>Your OAuth Profile Context:</h3>
             <pre className="code-block">
