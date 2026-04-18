@@ -14,7 +14,7 @@ export default function AlertBanner() {
   return (
     <div className="alert-banners-container">
       {alerts.map(alert => (
-        <div key={alert.id} className="global-alert-banner slide-down">
+        <div key={alert.id} className="global-alert-banner slide-in-right">
           <div className="alert-icon">
             <i className="bi bi-exclamation-triangle-fill"></i>
           </div>

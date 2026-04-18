@@ -14,6 +14,7 @@ import java.util.List;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     /**
      * Creates a new user or updates name/picture on every OAuth login.
@@ -34,14 +35,25 @@ public class UserService {
                     }
                     return userRepository.save(existing);
                 })
-                .orElseGet(() -> userRepository.save(
-                        User.builder()
-                                .email(email)
-                                .name(name)
-                                .picture(picture)
-                                .role("hishenperera@gmail.com".equalsIgnoreCase(email) ? Role.ADMIN : Role.USER)
-                                .build()
-                ));
+                .orElseGet(() -> {
+                    User newUser = User.builder()
+                            .email(email)
+                            .name(name)
+                            .picture(picture)
+                            .role("hishenperera@gmail.com".equalsIgnoreCase(email) ? Role.ADMIN : Role.USER)
+                            .build();
+                    User savedUser = userRepository.save(newUser);
+                    
+                    // Send welcome notification
+                    notificationService.sendToUser(
+                            savedUser, 
+                            "Welcome to Smart Campus! We're glad to have you.", 
+                            com.booking.backend.model.NotificationType.NOTIFICATION, 
+                            "7DAY"
+                    );
+                    
+                    return savedUser;
+                });
     }
 
     /** Returns all registered users. */
@@ -53,8 +65,21 @@ public class UserService {
     public User updateRole(Long id, Role role) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found: " + id));
+        Role oldRole = user.getRole();
         user.setRole(role);
-        return userRepository.save(user);
+        User updatedUser = userRepository.save(user);
+
+        // Send role update notification
+        if (oldRole != role) {
+            notificationService.sendToUser(
+                    updatedUser, 
+                    "Your role has been updated to " + role.name() + ".", 
+                    com.booking.backend.model.NotificationType.ALERT, 
+                    "7DAY"
+            );
+        }
+
+        return updatedUser;
     }
 
     /** Finds a user by their email. */

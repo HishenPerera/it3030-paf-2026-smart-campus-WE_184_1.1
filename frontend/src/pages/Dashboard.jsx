@@ -72,17 +72,7 @@ export default function Dashboard() {
       </header>
 
       <main className="dashboard-main">
-        <div className="welcome-card glass-panel">
-          <h1>Welcome back, {user.given_name || user.name || user.login}!</h1>
-          <p>You have successfully authenticated via OAuth2 through Spring Boot.</p>
-          
-          <div className="raw-data-section">
-            <h3>Your OAuth Profile Context:</h3>
-            <pre className="code-block">
-              {JSON.stringify(user, null, 2)}
-            </pre>
-          </div>
-        </div>
+        
       </main>
     </div>
   );

@@ -18,6 +18,7 @@ export const updateUserRole = (id, role) => api.put(`/api/admin/users/${id}/role
 // ── Notifications ────────────────────────────────────────
 export const fetchNotifications = () => api.get('/api/notifications').then(r => r.data);
 export const markNotificationRead = (id) => api.put(`/api/notifications/${id}/read`).then(r => r.data);
+export const markAllNotificationsRead = () => api.put('/api/notifications/read-all').then(r => r.data);
 export const sendNotification = (payload) => api.post('/api/notifications/send', payload).then(r => r.data);
 export const fetchNotificationBatches = () => api.get('/api/notifications/batches').then(r => r.data);
 export const deleteNotificationBatch = (batchId) => api.delete(`/api/notifications/batches/${batchId}`).then(r => r.data);

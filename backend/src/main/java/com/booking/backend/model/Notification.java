@@ -29,6 +29,7 @@ public class Notification {
 
     @Column(nullable = false)
     @Builder.Default
+    @com.fasterxml.jackson.annotation.JsonProperty("isRead")
     private Boolean isRead = false;
 
     @Column(nullable = false)
