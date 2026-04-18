@@ -84,4 +84,24 @@ public class TicketController {
                 .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(java.util.Map.of("message", "Ticket not found or access denied.")));
     }
+
+    @PutMapping("/{id}/status")
+    public ResponseEntity<?> updateTicketStatus(
+            @AuthenticationPrincipal OAuth2User principal,
+            @PathVariable Long id,
+            @RequestBody java.util.Map<String, String> payload) {
+
+        String email = null;
+        if (principal != null) {
+            email = principal.getAttribute("email");
+        }
+
+        String status = payload.get("status");
+        String rejectionReason = payload.get("rejectionReason");
+
+        return ticketService.updateTicketStatus(email, id, status, rejectionReason)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(java.util.Map.of("message", "Unable to update ticket status. You may not be authorized or the status transition is invalid.")));
+    }
 }

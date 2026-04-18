@@ -49,6 +49,9 @@ public class Ticket {
     @Column(length = 2000)
     private String resolutionNotes;
 
+    @Column(length = 1000)
+    private String rejectionReason;
+
     private LocalDateTime createdAt;
 
     @Column(nullable = false)

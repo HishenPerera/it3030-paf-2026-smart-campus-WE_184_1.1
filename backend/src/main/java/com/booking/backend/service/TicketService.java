@@ -134,4 +134,108 @@ public class TicketService {
 
         return Optional.empty();
     }
+
+    public Optional<Ticket> updateTicketStatus(String email, Long ticketId, String newStatus, String rejectionReason) {
+        User requestUser = null;
+        if (email != null) {
+            requestUser = userRepository.findByEmail(email).orElse(null);
+        }
+        if (requestUser == null) {
+            return Optional.empty();
+        }
+
+        Optional<Ticket> optionalTicket = ticketRepository.findById(ticketId);
+        if (optionalTicket.isEmpty()) {
+            return Optional.empty();
+        }
+
+        Ticket ticket = optionalTicket.get();
+        boolean isAdmin = requestUser.getRole() == com.booking.backend.model.Role.ADMIN;
+        boolean isTechnician = requestUser.getRole() == com.booking.backend.model.Role.TECHNICIAN;
+        boolean isAssignedTech = ticket.getAssignedTechnician() != null && ticket.getAssignedTechnician().getId().equals(requestUser.getId());
+
+        if (!(isAdmin || (isTechnician && isAssignedTech))) {
+            return Optional.empty();
+        }
+
+        if (newStatus == null || newStatus.isBlank()) {
+            return Optional.empty();
+        }
+
+        String normalizedCurrent = normalizeStatus(ticket.getStatus());
+        String normalizedNext = normalizeStatus(newStatus);
+        if (normalizedNext == null) {
+            return Optional.empty();
+        }
+
+        if ("REJECTED".equals(normalizedNext) && !isAdmin) {
+            return Optional.empty();
+        }
+
+        if (!isAdmin) {
+            if (!isValidTechnicianTransition(normalizedCurrent, normalizedNext)) {
+                return Optional.empty();
+            }
+        } else {
+            if (!isValidAdminTransition(normalizedCurrent, normalizedNext)) {
+                return Optional.empty();
+            }
+        }
+
+        if ("REJECTED".equals(normalizedNext) && (rejectionReason == null || rejectionReason.isBlank())) {
+            return Optional.empty();
+        }
+
+        ticket.setStatus(formatStatus(normalizedNext));
+        if ("REJECTED".equals(normalizedNext)) {
+            ticket.setRejectionReason(rejectionReason);
+        } else {
+            ticket.setRejectionReason(null);
+        }
+
+        return Optional.of(ticketRepository.save(ticket));
+    }
+
+    private String normalizeStatus(String status) {
+        if (status == null) return null;
+        switch (status.trim().toUpperCase().replace(' ', '_')) {
+            case "OPEN": return "OPEN";
+            case "IN_PROGRESS": return "IN_PROGRESS";
+            case "RESOLVED": return "RESOLVED";
+            case "CLOSED": return "CLOSED";
+            case "REJECTED": return "REJECTED";
+            default: return null;
+        }
+    }
+
+    private boolean isValidTechnicianTransition(String current, String next) {
+        if (current == null) return false;
+        return switch (current) {
+            case "OPEN" -> "IN_PROGRESS".equals(next);
+            case "IN_PROGRESS" -> "RESOLVED".equals(next);
+            case "RESOLVED" -> "CLOSED".equals(next);
+            default -> false;
+        };
+    }
+
+    private boolean isValidAdminTransition(String current, String next) {
+        if (current == null) return false;
+        return switch (current) {
+            case "OPEN" -> List.of("IN_PROGRESS", "REJECTED").contains(next);
+            case "IN_PROGRESS" -> List.of("RESOLVED", "REJECTED").contains(next);
+            case "RESOLVED" -> List.of("CLOSED", "REJECTED").contains(next);
+            default -> false;
+        };
+    }
+
+    private String formatStatus(String normalizedStatus) {
+        return switch (normalizedStatus) {
+            case "OPEN" -> "Open";
+            case "IN_PROGRESS" -> "In Progress";
+            case "RESOLVED" -> "Resolved";
+            case "CLOSED" -> "Closed";
+            case "REJECTED" -> "Rejected";
+            default -> normalizedStatus;
+        };
+    }
 }

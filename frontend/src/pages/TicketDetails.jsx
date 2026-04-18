@@ -1,23 +1,39 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { fetchTicketById } from '../api/api';
+import { fetchTicketById, fetchCurrentUser, updateTicketStatus } from '../api/api';
 import { useNotifications } from '../context/NotificationContext';
 import { ArrowLeft, Image as ImageIcon } from 'lucide-react';
 import './TicketDetails.css';
+
+const STATUS_TRANSITIONS = {
+  Open: ['In Progress'],
+  'In Progress': ['Resolved'],
+  Resolved: ['Closed'],
+  Closed: [],
+  Rejected: []
+};
 
 export default function TicketDetails() {
   const { id } = useParams();
   const [ticket, setTicket] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState('USER');
+  const [selectedStatus, setSelectedStatus] = useState('');
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [updating, setUpdating] = useState(false);
   const navigate = useNavigate();
   const { showNotification } = useNotifications();
 
   useEffect(() => {
-    const loadTicket = async () => {
+    const loadData = async () => {
       setLoading(true);
       try {
-        const data = await fetchTicketById(id);
-        setTicket(data);
+        const [ticketData, currentUser] = await Promise.all([
+          fetchTicketById(id),
+          fetchCurrentUser()
+        ]);
+        setTicket(ticketData);
+        setUserRole(currentUser.role || 'USER');
       } catch (err) {
         showNotification('Unable to load ticket details.', 'error');
       } finally {
@@ -25,8 +41,51 @@ export default function TicketDetails() {
       }
     };
 
-    loadTicket();
+    loadData();
   }, [id]);
+
+  const canUpdateStatus = () => {
+    if (!ticket) return false;
+    if (ticket.status === 'Closed' || ticket.status === 'Rejected') return false;
+    return userRole === 'TECHNICIAN' || userRole === 'ADMIN';
+  };
+
+  const availableStatusOptions = () => {
+    if (!ticket) return [];
+    const next = STATUS_TRANSITIONS[ticket.status] || [];
+    if (userRole === 'ADMIN') {
+      return [...next, 'Rejected'];
+    }
+    return next;
+  };
+
+  const submitStatusUpdate = async () => {
+    if (!selectedStatus) {
+      showNotification('Please select a valid status.', 'error');
+      return;
+    }
+    if (selectedStatus === 'Rejected' && !rejectionReason.trim()) {
+      showNotification('Please enter a rejection reason.', 'error');
+      return;
+    }
+
+    setUpdating(true);
+    try {
+      const payload = { status: selectedStatus };
+      if (selectedStatus === 'Rejected') {
+        payload.rejectionReason = rejectionReason;
+      }
+      const updated = await updateTicketStatus(id, payload);
+      setTicket(updated);
+      setSelectedStatus('');
+      setRejectionReason('');
+      showNotification('Ticket status updated successfully.', 'success');
+    } catch (err) {
+      showNotification('Failed to update ticket status.', 'error');
+    } finally {
+      setUpdating(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -67,7 +126,7 @@ export default function TicketDetails() {
         <section className="details-card glass-panel">
           <div className="details-card-header">
             <h3>Ticket Summary</h3>
-            <span className="badge" style={{ backgroundColor: ticket.status === 'Open' ? '#3b82f6' : ticket.status === 'In Progress' ? '#f59e0b' : ticket.status === 'Resolved' ? '#10b981' : '#6b7280' }}>
+            <span className="badge" style={{ backgroundColor: ticket.status === 'Open' ? '#3b82f6' : ticket.status === 'In Progress' ? '#f59e0b' : ticket.status === 'Resolved' ? '#10b981' : ticket.status === 'Rejected' ? '#ef4444' : '#6b7280' }}>
               {ticket.status}
             </span>
           </div>
@@ -109,6 +168,45 @@ export default function TicketDetails() {
               <p>{ticket.resolutionNotes || 'No resolution notes available.'}</p>
             </div>
           </div>
+
+          {ticket.status === 'Rejected' && (
+            <div className="details-row">
+              <div>
+                <span className="label">Rejection Reason</span>
+                <p>{ticket.rejectionReason || 'No rejection reason provided.'}</p>
+              </div>
+            </div>
+          )}
+
+          {canUpdateStatus() && (
+            <div className="status-update-panel">
+              <h4>Update Ticket Status</h4>
+              <div className="form-row">
+                <select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)}>
+                  <option value="">Select status</option>
+                  {availableStatusOptions().map(statusOption => (
+                    <option key={statusOption} value={statusOption}>{statusOption}</option>
+                  ))}
+                </select>
+              </div>
+
+              {selectedStatus === 'Rejected' && (
+                <div className="form-row">
+                  <label>Rejection Reason</label>
+                  <textarea
+                    value={rejectionReason}
+                    onChange={(e) => setRejectionReason(e.target.value)}
+                    rows={4}
+                    placeholder="Enter rejection reason"
+                  />
+                </div>
+              )}
+
+              <button className="btn-primary" onClick={submitStatusUpdate} disabled={updating || !selectedStatus}>
+                {updating ? 'Updating…' : 'Update Status'}
+              </button>
+            </div>
+          )}
         </section>
 
         <section className="details-card glass-panel">
