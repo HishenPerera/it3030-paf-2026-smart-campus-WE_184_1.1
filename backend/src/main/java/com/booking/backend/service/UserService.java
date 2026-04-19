@@ -6,6 +6,7 @@ import com.booking.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -62,6 +63,7 @@ public class UserService {
     }
 
     /** Updates the role of a user identified by id. */
+    @Transactional
     public User updateRole(Long id, Role role) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found: " + id));

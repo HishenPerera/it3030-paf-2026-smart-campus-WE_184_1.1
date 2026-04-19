@@ -1,10 +1,11 @@
-import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
+import React, { createContext, useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { fetchNotifications, markNotificationRead, markAllNotificationsRead } from '../api/api';
 
 const NotificationContext = createContext();
 
 export const NotificationProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
+  const [toasts, setToasts] = useState([]);
   const pollingRef = useRef(null);
 
   const fetchMyNotifications = useCallback(async () => {
@@ -45,7 +46,7 @@ export const NotificationProvider = ({ children }) => {
   const normalNotifications = notifications.filter(n => n.type === 'NOTIFICATION');
   const unreadNormalCount = normalNotifications.filter(isUnread).length;
 
-  const markAsRead = async (id) => {
+  const markAsRead = useCallback(async (id) => {
     // Optimistic update first for instant UI feedback
     setNotifications(prev =>
       prev.map(n => n.id === id ? { ...n, isRead: true, read: true } : n)
@@ -57,9 +58,9 @@ export const NotificationProvider = ({ children }) => {
       // Rollback optimistic update on failure
       await fetchMyNotifications();
     }
-  };
+  }, [fetchMyNotifications]);
 
-  const markAllAsRead = async () => {
+  const markAllAsRead = useCallback(async () => {
     // Optimistic update for instant feedback
     setNotifications(prev =>
       prev.map(n => n.type === 'NOTIFICATION' ? { ...n, isRead: true, read: true } : n)
@@ -75,21 +76,50 @@ export const NotificationProvider = ({ children }) => {
     } finally {
       startPolling();
     }
-  };
+  }, [fetchMyNotifications, startPolling, stopPolling]);
+
+  const removeToast = useCallback((id) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  }, []);
+
+  const showNotification = useCallback((message, type = 'info') => {
+    const id = `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    const normalizedType = (type || 'info').toLowerCase();
+    const toast = { id, message, type: normalizedType };
+    setToasts(prev => [toast, ...prev].slice(0, 5));
+
+    // Auto-dismiss after 3.5s (errors stick slightly longer)
+    const ttl = normalizedType === 'error' ? 5500 : 3500;
+    window.setTimeout(() => removeToast(id), ttl);
+  }, [removeToast]);
+
+  const value = useMemo(() => ({
+    notifications,
+    alerts,
+    normalNotifications,
+    unreadNormalCount,
+    toasts,
+    markAsRead,
+    markAllAsRead,
+    fetchMyNotifications,
+    showNotification,
+    removeToast,
+  }), [notifications, alerts, normalNotifications, unreadNormalCount, toasts, markAsRead, markAllAsRead, fetchMyNotifications, showNotification, removeToast]);
 
   return (
-    <NotificationContext.Provider value={{
-      notifications,
-      alerts,
-      normalNotifications,
-      unreadNormalCount,
-      markAsRead,
-      markAllAsRead,
-      fetchMyNotifications,
-    }}>
+    <NotificationContext.Provider value={value}>
       {children}
     </NotificationContext.Provider>
   );
 };
 
-export const useNotifications = () => useContext(NotificationContext);
+// Named export for components that import { useNotifications }
+export const useNotifications = () => {
+  const context = React.useContext(NotificationContext);
+  if (!context) {
+    throw new Error('useNotifications must be used within a NotificationProvider');
+  }
+  return context;
+};
+
+export default NotificationContext;
