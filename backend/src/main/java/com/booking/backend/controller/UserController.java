@@ -30,13 +30,37 @@ public class UserController {
 
     /**
      * GET /api/admin/technicians
-     * Returns all users with TECHNICIAN role. Accessible by ADMIN only.
+     * Returns all users with TECHNICIAN role. Accessible by ADMIN or TECHNICIAN.
      */
     @GetMapping("/technicians")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICIAN')")
     public List<User> getAllTechnicians() {
         return userService.getAllUsers().stream()
                 .filter(user -> user.getRole() == Role.TECHNICIAN)
                 .toList();
+    }
+
+    /**
+     * PUT /api/admin/users/{id}/role
+     * Updates the role of a user. Accessible by ADMIN only.
+     */
+    @PutMapping("/users/{id}/role")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> updateUserRole(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> body) {
+        String roleName = body.get("role");
+        if (roleName == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Role is required"));
+        }
+        try {
+            Role role = Role.valueOf(roleName.toUpperCase());
+            User updated = userService.updateRole(id, role);
+            return ResponseEntity.ok(updated);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Invalid role: " + roleName));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
     }
 }

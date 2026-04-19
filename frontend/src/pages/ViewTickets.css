@@ -43,7 +43,7 @@
 
 .filter-group {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 0.5rem;
 }
 
@@ -136,7 +136,7 @@
 
 .ticket-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
 }
 
 .ticket-card-header {
@@ -149,14 +149,14 @@
   padding: 0.85rem 1rem;
   border-radius: var(--radius-sm);
   border: none;
-  background: rgba(255,255,255,0.08);
+  background: rgba(255, 255, 255, 0.08);
   color: var(--text-primary);
   cursor: pointer;
   transition: background 0.2s ease;
 }
 
 .ticket-details-btn:hover {
-  background: rgba(255,255,255,0.15);
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .ticket-id {
@@ -186,14 +186,14 @@
 
 .meta-tag {
   font-size: 0.75rem;
-  background: rgba(255,255,255,0.1);
+  background: rgba(255, 255, 255, 0.1);
   padding: 0.2rem 0.6rem;
   border-radius: 4px;
 }
 
 .ticket-desc {
   font-size: 0.95rem;
-  color: rgba(255,255,255,0.8);
+  color: rgba(255, 255, 255, 0.8);
   margin-bottom: 1.5rem;
   line-height: 1.5;
   display: -webkit-box;
@@ -207,7 +207,7 @@
   grid-template-columns: 1fr 1fr;
   gap: 0.8rem;
   margin-bottom: 1rem;
-  background: rgba(0,0,0,0.15);
+  background: rgba(0, 0, 0, 0.15);
   padding: 1rem;
   border-radius: 8px;
 }
@@ -256,7 +256,7 @@
   height: 48px;
   border-radius: 6px;
   overflow: hidden;
-  border: 1px solid rgba(255,255,255,0.2);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   transition: transform 0.2s ease;
 }
 

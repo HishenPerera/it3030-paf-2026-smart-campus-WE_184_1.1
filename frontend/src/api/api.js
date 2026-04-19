@@ -5,10 +5,20 @@ const api = axios.create({
   withCredentials: true,
 });
 
-// // ── Halls ────────────────────────────────────────────────
-// export const fetchHalls = () => api.get('/api/halls').then(r => r.data);
-// export const fetchHall = (id) => api.get(`/api/halls/${id}`).then(r => r.data);
-// export const fetchSeats = (hallId) => api.get(`/api/halls/${hallId}/seats`).then(r => r.data);
+// ── Resources ─────────────────────────────────────────────
+export const fetchResources = (params) => api.get('/api/resources', { params }).then(r => r.data);
+export const createResource = (data) => api.post('/api/resources', data).then(r => r.data);
+export const updateResource = (id, data) => api.put(`/api/resources/${id}`, data).then(r => r.data);
+export const deleteResource = (id) => api.delete(`/api/resources/${id}`).then(r => r.data);
+
+// ── Reservations ──────────────────────────────────────────
+export const fetchMyReservations = () => api.get('/api/reservations/my').then(r => r.data);
+export const fetchAllReservations = () => api.get('/api/reservations/admin/all').then(r => r.data);
+export const fetchAvailability = (date, startTime, endTime) =>
+  api.get('/api/reservations/availability', { params: { date, startTime, endTime } }).then(r => r.data);
+export const createReservation = (data) => api.post('/api/reservations', data).then(r => r.data);
+export const confirmReservation = (id) => api.post(`/api/reservations/${id}/confirm`).then(r => r.data);
+export const cancelReservation = (id, reason = '') => api.delete(`/api/reservations/${id}`, { data: { reason } }).then(r => r.data);
 
 // ── User ─────────────────────────────────────────────────
 export const fetchCurrentUser = () => api.get('/api/user/me').then(r => r.data);
@@ -25,15 +35,16 @@ export const sendNotification = (payload) => api.post('/api/notifications/send',
 export const fetchNotificationBatches = () => api.get('/api/notifications/batches').then(r => r.data);
 export const deleteNotificationBatch = (batchId) => api.delete(`/api/notifications/batches/${batchId}`).then(r => r.data);
 
-// // ── Bookings ─────────────────────────────────────────────
-// export const fetchMyBookings = () => api.get('/api/bookings').then(r => r.data);
-// export const fetchAllBookings = () => api.get('/api/bookings/all').then(r => r.data);
-// export const createBooking = (seatId, eventDate) =>
-//   api.post('/api/bookings', { seatId, eventDate }).then(r => r.data);
-// export const cancelBooking = (id) => api.delete(`/api/bookings/${id}`).then(r => r.data);
-
 // ── Tickets ──────────────────────────────────────────────
-export const fetchTickets = (params) => api.get('/api/tickets', { params }).then(r => r.data);
+export const fetchTickets = (params) => {
+  // Rename technicianId → assignedTechnicianId to match the backend param name
+  const mapped = { ...params };
+  if (mapped.technicianId !== undefined) {
+    mapped.assignedTechnicianId = mapped.technicianId;
+    delete mapped.technicianId;
+  }
+  return api.get('/api/tickets', { params: mapped }).then(r => r.data);
+};
 export const fetchTicketById = (id) => api.get(`/api/tickets/${id}`).then(r => r.data);
 export const updateTicketStatus = (ticketId, payload) => api.put(`/api/tickets/${ticketId}/status`, payload).then(r => r.data);
 export const assignTechnician = (ticketId, technicianId) => api.put(`/api/tickets/${ticketId}/assign`, { technicianId }).then(r => r.data);
