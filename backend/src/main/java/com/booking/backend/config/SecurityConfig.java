@@ -2,9 +2,9 @@ package com.booking.backend.config;
 
 import java.util.Arrays;
 
-import com.booking.backend.service.CustomOAuth2UserService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -14,7 +14,8 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.http.MediaType;
+
+import com.booking.backend.service.CustomOAuth2UserService;
 
 @Configuration
 @EnableWebSecurity
@@ -60,7 +61,7 @@ public class SecurityConfig {
                 .userInfoEndpoint(userInfo -> userInfo
                     .userService(customOAuth2UserService)
                 )
-                .defaultSuccessUrl("http://localhost:5174/dashboard", true)
+                .defaultSuccessUrl("http://localhost:5173/dashboard", true)
             )
             .exceptionHandling(ex -> ex
                 .defaultAuthenticationEntryPointFor(
